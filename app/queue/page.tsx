@@ -9,9 +9,13 @@ import {
   loadSRMap,
   type SRState,
 } from "@/lib/leitner";
+import { persistSessionResponses } from "@/lib/recommendation-store";
+import { posteriorConfidence, type BetaPosterior } from "@/lib/recommendation";
 
 interface Response {
   itemId: string;
+  /** QuestionType id from queue plan (for posterior update) */
+  qtId: string;
   correct: boolean;
   at: string;
 }
@@ -28,6 +32,7 @@ export default function QueuePage() {
     total: number;
     advancements: number;
     boxAfter: Record<string, number>;
+    posterior?: BetaPosterior;
   } | null>(null);
 
   const totalCards = plan.cards.length;
@@ -43,7 +48,12 @@ export default function QueuePage() {
     const correct = selectedIdx === card.answerIdx;
     setResponses((prev) => [
       ...prev,
-      { itemId: card.itemId, correct, at: new Date().toISOString() },
+      {
+        itemId: card.itemId,
+        qtId: plan.targetQuestionType.id,
+        correct,
+        at: new Date().toISOString(),
+      },
     ]);
     setRevealed(true);
   }
@@ -60,7 +70,9 @@ export default function QueuePage() {
 
   function finalize() {
     const beforeMap: Record<string, SRState> = loadSRMap();
-    applyResponses(responses);
+    applyResponses(
+      responses.map((r) => ({ itemId: r.itemId, correct: r.correct, at: r.at }))
+    );
     const correct = responses.filter((r) => r.correct).length;
     const advancements = countAdvancements(responses, beforeMap);
     const afterMap = loadSRMap();
@@ -69,7 +81,15 @@ export default function QueuePage() {
       const s = afterMap[r.itemId];
       if (s) boxAfter[String(s.box)]++;
     }
-    setSummary({ correct, total: responses.length, advancements, boxAfter });
+
+    // Persist Beta posteriors for Phase 2 P-1 Thompson sampling.
+    const postMap = persistSessionResponses(
+      responses.map((r) => ({ qtId: r.qtId, isCorrect: r.correct })),
+      DEMO_DIAGNOSTIC.dimensionScores
+    );
+    const posterior = postMap[plan.targetQuestionType.id];
+
+    setSummary({ correct, total: responses.length, advancements, boxAfter, posterior });
     setDone(true);
   }
 
@@ -197,6 +217,21 @@ export default function QueuePage() {
               value={dimensionsInQueue(plan.cards).join(", ")}
             />
           </dl>
+
+          {summary.posterior && (
+            <div className="flex flex-col gap-1 rounded-md bg-zinc-50 px-3 py-2 text-xs dark:bg-zinc-900">
+              <p className="font-medium text-zinc-700 dark:text-zinc-300">
+                Thompson posterior — {plan.targetQuestionType.name}
+              </p>
+              <p className="text-zinc-600 dark:text-zinc-400">
+                α={summary.posterior.alpha.toFixed(1)} · β={summary.posterior.beta.toFixed(1)} ·
+                samples={summary.posterior.samples} · confidence={posteriorConfidence(summary.posterior)}
+              </p>
+              <p className="text-zinc-500">
+                다음 큐 추천에 즉시 반영됨 (localStorage 영속화).
+              </p>
+            </div>
+          )}
 
           <div className="flex flex-col gap-2">
             <p className="text-xs uppercase tracking-wider text-zinc-500">
