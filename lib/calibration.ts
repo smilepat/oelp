@@ -142,9 +142,7 @@ function ridgeFit4d(
   prior: Record<VocabDimension, number>,
   lambda: number
 ): RidgeFitResult {
-  const n = responses.length;
-  // X: n × 4 (D2, D3, D4, D5 scores / 100)
-  // y: n × 1 (correctness as 0 or 1)
+  // X: n × 4 (D2, D3, D4, D5 scores / 100), y: n × 1 (correctness)
   const X: number[][] = [];
   const y: number[] = [];
   for (const r of responses) {

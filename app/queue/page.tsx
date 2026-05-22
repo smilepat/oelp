@@ -14,6 +14,11 @@ import {
   persistSessionResponses,
 } from "@/lib/recommendation-store";
 import { posteriorConfidence, type BetaPosterior } from "@/lib/recommendation";
+import {
+  saveSession,
+  type SessionEvaluation,
+  type SessionRecord,
+} from "@/lib/session-store";
 
 interface Response {
   itemId: string;
@@ -33,6 +38,9 @@ export default function QueuePage() {
   const [revealed, setRevealed] = useState(false);
   const [responses, setResponses] = useState<Response[]>([]);
   const [done, setDone] = useState(false);
+  const [sessionStart] = useState<string>(() => new Date().toISOString());
+  const [sessionRecord, setSessionRecord] = useState<SessionRecord | null>(null);
+  const [evalSaved, setEvalSaved] = useState(false);
   const [summary, setSummary] = useState<{
     correct: number;
     total: number;
@@ -95,17 +103,52 @@ export default function QueuePage() {
     );
     const posterior = postMap[plan.targetQuestionType.id];
 
+    // Phase 1.5: assemble session record (NOT yet saved — wait for user action).
+    const endedAt = new Date().toISOString();
+    const durationSec = Math.round(
+      (new Date(endedAt).getTime() - new Date(sessionStart).getTime()) / 1000
+    );
+    const record: SessionRecord = {
+      sessionId: `s-${Date.now()}`,
+      startedAt: sessionStart,
+      endedAt,
+      durationSec,
+      targetQuestionType: plan.targetQuestionType.id,
+      algorithm: plan.algorithm,
+      confidence: plan.confidence,
+      alternateQuestionType: plan.alternateQuestionType.id,
+      correct,
+      total: responses.length,
+      advancements,
+      boxAfter,
+      posteriorAfter: posterior,
+      responses: responses.map((r) => ({
+        itemId: r.itemId,
+        qtId: r.qtId,
+        isCorrect: r.correct,
+        dimensionScores: DEMO_DIAGNOSTIC.dimensionScores,
+        at: r.at,
+      })),
+    };
+    setSessionRecord(record);
     setSummary({ correct, total: responses.length, advancements, boxAfter, posterior });
     setDone(true);
   }
 
+  function saveWithEvaluation(evaluation: SessionEvaluation | undefined) {
+    if (!sessionRecord || evalSaved) return;
+    const record: SessionRecord = evaluation
+      ? { ...sessionRecord, evaluation }
+      : sessionRecord;
+    saveSession(record);
+    setSessionRecord(record);
+    setEvalSaved(true);
+  }
+
   function restart() {
-    setCurrentIdx(0);
-    setSelectedIdx(null);
-    setRevealed(false);
-    setResponses([]);
-    setDone(false);
-    setSummary(null);
+    // Full reload — gets fresh sessionStart + new plan (Thompson sampling) +
+    // ensures stored session is reflected if user navigates to /sessions.
+    if (typeof window !== "undefined") window.location.reload();
   }
 
   return (
@@ -285,13 +328,11 @@ export default function QueuePage() {
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={restart}
-            className="self-start rounded-md border border-zinc-200 px-4 py-2 text-sm text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-900"
-          >
-            새 큐 시작
-          </button>
+          <EvaluationForm
+            onSave={saveWithEvaluation}
+            saved={evalSaved}
+            onRestart={restart}
+          />
         </section>
       )}
     </main>
@@ -304,6 +345,151 @@ function Stat({ label, value, hint }: { label: string; value: string; hint?: str
       <p className="text-xs text-zinc-500">{label}</p>
       <p className="text-sm font-semibold text-zinc-950 dark:text-zinc-50">{value}</p>
       {hint && <p className="text-[10px] text-zinc-400">{hint}</p>}
+    </div>
+  );
+}
+
+interface EvalFormProps {
+  onSave: (evaluation: SessionEvaluation | undefined) => void;
+  saved: boolean;
+  onRestart: () => void;
+}
+
+function EvaluationForm({ onSave, saved, onRestart }: EvalFormProps) {
+  const [c12, setC12] = useState<number>(0);
+  const [c21, setC21] = useState<number>(0);
+  const [c23, setC23] = useState<number>(0);
+  const [c33, setC33] = useState<"yes" | "no" | "">("");
+  const [overall, setOverall] = useState<number>(0);
+  const [notes, setNotes] = useState<string>("");
+
+  function handleSave(withEval: boolean) {
+    if (withEval) {
+      const evaluation: SessionEvaluation = {
+        c1_2_diagnostic_consistency: c12,
+        c2_1_map_acceptance: c21,
+        c2_3_node_intuition: c23,
+        c3_3_continue_intention: c33 || "no",
+        overall_satisfaction: overall,
+        notes,
+      };
+      onSave(evaluation);
+    } else {
+      onSave(undefined);
+    }
+  }
+
+  const hasAny = c12 > 0 || c21 > 0 || c23 > 0 || c33 !== "" || overall > 0 || notes !== "";
+
+  if (saved) {
+    return (
+      <div className="flex flex-col gap-3 rounded-md bg-green-50 px-4 py-3 dark:bg-green-950">
+        <p className="text-sm text-green-900 dark:text-green-100">
+          ✓ 세션 저장 완료. <a className="underline" href="/sessions">/sessions</a>에서 히스토리 확인.
+        </p>
+        <button
+          type="button"
+          onClick={onRestart}
+          className="self-start rounded-md border border-zinc-200 px-4 py-2 text-sm text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-900"
+        >
+          새 큐 시작
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-3 rounded-md border border-zinc-200 p-4 dark:border-zinc-800">
+      <p className="text-xs uppercase tracking-wider text-zinc-500">
+        세션 평가 (선택 — W8 dogfooding)
+      </p>
+      <RatingRow label="C1.2 진단 weakDim 직관 일치도" value={c12} onChange={setC12} />
+      <RatingRow label="C2.1 Map weakness 도메인 납득도" value={c21} onChange={setC21} />
+      <RatingRow label="C2.3 노드 detail 직관성" value={c23} onChange={setC23} />
+      <div className="flex items-center gap-2">
+        <p className="w-64 text-xs text-zinc-700 dark:text-zinc-300">
+          C3.3 다시 할 의향?
+        </p>
+        <button
+          type="button"
+          onClick={() => setC33("yes")}
+          className={[
+            "rounded-md px-3 py-1 text-xs",
+            c33 === "yes"
+              ? "bg-green-600 text-white"
+              : "border border-zinc-200 text-zinc-600 dark:border-zinc-800 dark:text-zinc-400",
+          ].join(" ")}
+        >
+          Yes
+        </button>
+        <button
+          type="button"
+          onClick={() => setC33("no")}
+          className={[
+            "rounded-md px-3 py-1 text-xs",
+            c33 === "no"
+              ? "bg-red-600 text-white"
+              : "border border-zinc-200 text-zinc-600 dark:border-zinc-800 dark:text-zinc-400",
+          ].join(" ")}
+        >
+          No
+        </button>
+      </div>
+      <RatingRow label="종합 만족도" value={overall} onChange={setOverall} />
+      <textarea
+        value={notes}
+        onChange={(e) => setNotes(e.target.value)}
+        rows={3}
+        placeholder="메모 (선택)"
+        className="rounded-md border border-zinc-200 bg-transparent px-3 py-2 text-sm dark:border-zinc-800"
+      />
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={() => handleSave(hasAny)}
+          className="rounded-md bg-zinc-900 px-4 py-2 text-sm text-zinc-50 transition-colors hover:bg-zinc-700 dark:bg-zinc-50 dark:text-zinc-950 dark:hover:bg-zinc-300"
+        >
+          {hasAny ? "평가와 함께 저장" : "평가 없이 저장"}
+        </button>
+        <button
+          type="button"
+          onClick={onRestart}
+          className="rounded-md border border-zinc-200 px-4 py-2 text-sm text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-900"
+        >
+          저장하지 않고 새 큐 시작
+        </button>
+      </div>
+    </div>
+  );
+}
+
+interface RatingRowProps {
+  label: string;
+  value: number;
+  onChange: (v: number) => void;
+}
+
+function RatingRow({ label, value, onChange }: RatingRowProps) {
+  return (
+    <div className="flex items-center gap-2">
+      <p className="w-64 text-xs text-zinc-700 dark:text-zinc-300">{label}</p>
+      <div className="flex gap-1">
+        {[1, 2, 3, 4, 5].map((n) => (
+          <button
+            key={n}
+            type="button"
+            onClick={() => onChange(n)}
+            className={[
+              "h-7 w-7 rounded-md text-xs",
+              value === n
+                ? "bg-zinc-900 text-zinc-50 dark:bg-zinc-50 dark:text-zinc-950"
+                : "border border-zinc-200 text-zinc-600 hover:bg-zinc-50 dark:border-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-900",
+            ].join(" ")}
+          >
+            {n}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

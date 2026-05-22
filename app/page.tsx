@@ -19,6 +19,12 @@ const FEATURES = [
     body: "약점 QuestionType 기반 룰엔진 + Leitner 5-Box SR.",
     status: "scaffold",
   },
+  {
+    href: "/sessions",
+    title: "Sessions. 히스토리 (P-1.5)",
+    body: "완료된 세션 + W8 평가 누적. Calibration JSON 내보내기.",
+    status: "phase 1.5",
+  },
 ];
 
 export default function Home() {

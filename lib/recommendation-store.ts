@@ -217,10 +217,10 @@ export function persistSessionResponses(
  *   3. Merge into local + write back to localStorage
  */
 export async function syncFromSupabase(
-  _userId: string = DEFAULT_USER_ID
+  userId: string = DEFAULT_USER_ID
 ): Promise<{ synced: number; reason?: string }> {
   if (typeof process === "undefined" || !process.env.NEXT_PUBLIC_SUPABASE_URL) {
-    return { synced: 0, reason: "NEXT_PUBLIC_SUPABASE_URL not configured" };
+    return { synced: 0, reason: `NEXT_PUBLIC_SUPABASE_URL not configured (userId=${userId})` };
   }
   // TODO (P-1 W6): wire to @supabase/supabase-js
   return { synced: 0, reason: "not yet implemented (P-1 W6)" };
