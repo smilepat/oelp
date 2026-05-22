@@ -44,6 +44,8 @@ export interface QueueOpts {
   sessionSize?: number;
   /** Width of IRT b window around theta */
   difficultyHalfWidth?: number;
+  /** Avoid these itemIds (V3 only — passed to ContentGenerator) */
+  excludeItemIds?: string[];
 }
 
 /**
@@ -213,5 +215,68 @@ export function buildQueueV2(
     algorithm: rec.algorithm,
     alternateQuestionType: rec.alternateQuestionType,
     targetThetaSample: rec.targetThetaSample,
+  };
+}
+
+// ─── V3: ContentGenerator integration (P-2 W4) ──────────────────────
+
+import type { ContentGenerator } from "./content-generator";
+import type { ValidatorIssue } from "./content-validators";
+
+export interface QueuePlanV3 extends QueuePlanV2 {
+  /** Which generator produced the cards (for analytics + analytics-events) */
+  generator: string;
+  /** Validation issues encountered during generation (errors filtered out) */
+  generatorIssues: ValidatorIssue[];
+}
+
+/**
+ * V3 queue builder — Thompson QT selection + ContentGenerator card production.
+ *
+ * Replaces V2's hard-coded VOCAB_POOL filter with a pluggable generator.
+ * Default generator = defaultGeneratorChain (EBS-demo → LocalPool fallback).
+ *
+ * Async because EBS-demo path involves a REST call. LocalPoolGenerator path
+ * still resolves synchronously (just wrapped in Promise.resolve).
+ */
+export async function buildQueueV3(
+  diag: DiagnosticInput,
+  posteriors: Record<string, BetaPosterior>,
+  generator: ContentGenerator,
+  opts: QueueOpts = {}
+): Promise<QueuePlanV3> {
+  const sessionSize = opts.sessionSize ?? 10;
+  const halfWidth = opts.difficultyHalfWidth ?? 0.4;
+
+  // 1. Thompson recommendation
+  const rec = recommendQuestionType(diag.dimensionScores, posteriors);
+  const target = rec.targetQuestionType;
+
+  // 2. Top-2 dimensions by weight
+  const dimsRanked = (Object.entries(target.weights) as Array<[VocabDimension, number]>)
+    .sort((a, b) => b[1] - a[1])
+    .map(([d]) => d);
+  const targetDims = dimsRanked.slice(0, 2);
+
+  // 3. Delegate card production to generator
+  const generated = await generator.generate({
+    qtId: target.id,
+    targetDimensions: targetDims,
+    difficultyRange: { min: diag.theta - halfWidth, max: diag.theta + halfWidth },
+    count: sessionSize,
+    excludeItemIds: opts.excludeItemIds,
+  });
+
+  return {
+    targetQuestionType: target,
+    predictedCorrectness: rec.targetThetaSample,
+    targetDimensions: targetDims,
+    cards: generated.cards,
+    confidence: rec.confidence,
+    algorithm: rec.algorithm,
+    alternateQuestionType: rec.alternateQuestionType,
+    targetThetaSample: rec.targetThetaSample,
+    generator: generated.generator,
+    generatorIssues: generated.issues,
   };
 }

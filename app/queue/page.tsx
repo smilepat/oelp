@@ -1,8 +1,14 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { getActiveDiagnostic } from "@/lib/active-diagnostic";
-import { buildQueueV2, dimensionsInQueue, type VocabCard } from "@/lib/queue";
+import {
+  buildQueueV3,
+  dimensionsInQueue,
+  type QueuePlanV3,
+  type VocabCard,
+} from "@/lib/queue";
+import { defaultGeneratorChain } from "@/lib/content-generator";
 import {
   applyResponses,
   countAdvancements,
@@ -30,10 +36,25 @@ interface Response {
 
 export default function QueuePage() {
   const diagnostic = useMemo(() => getActiveDiagnostic(), []);
-  const plan = useMemo(() => {
-    const posteriors = loadPosteriors(diagnostic.dimensionScores);
-    return buildQueueV2(diagnostic, posteriors);
+  const [plan, setPlan] = useState<QueuePlanV3 | null>(null);
+
+  // V3 generator-based plan loading (P-2 W4). One-shot async on mount —
+  // eslint-disable for setState in effect (browser-only async resource).
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const posteriors = loadPosteriors(diagnostic.dimensionScores);
+      const result = await buildQueueV3(diagnostic, posteriors, defaultGeneratorChain());
+      if (!cancelled) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setPlan(result);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [diagnostic]);
+
   const [currentIdx, setCurrentIdx] = useState(0);
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
   const [revealed, setRevealed] = useState(false);
@@ -50,8 +71,30 @@ export default function QueuePage() {
     posterior?: BetaPosterior;
   } | null>(null);
 
-  const totalCards = plan.cards.length;
-  const card: VocabCard | undefined = plan.cards[currentIdx];
+  // Loading state while V3 generator resolves
+  if (!plan) {
+    return (
+      <main className="mx-auto flex max-w-3xl flex-col gap-6 px-6 py-12">
+        <header className="flex flex-col gap-2">
+          <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">
+            F3 · Learning Queue
+          </p>
+          <h1 className="text-2xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">
+            학습 큐 — 준비 중
+          </h1>
+          <p className="text-sm text-zinc-500">
+            ContentGenerator 응답 대기 중...
+          </p>
+        </header>
+      </main>
+    );
+  }
+
+  // After null guard: assign to const so TypeScript narrowing propagates into
+  // nested function closures (chooseOption, submit, finalize, etc).
+  const planNonNull = plan;
+  const totalCards = planNonNull.cards.length;
+  const card: VocabCard | undefined = planNonNull.cards[currentIdx];
 
   function chooseOption(idx: number) {
     if (revealed) return;
@@ -65,7 +108,7 @@ export default function QueuePage() {
       ...prev,
       {
         itemId: card.itemId,
-        qtId: plan.targetQuestionType.id,
+        qtId: planNonNull.targetQuestionType.id,
         correct,
         at: new Date().toISOString(),
       },
@@ -102,7 +145,7 @@ export default function QueuePage() {
       responses.map((r) => ({ qtId: r.qtId, isCorrect: r.correct })),
       diagnostic.dimensionScores
     );
-    const posterior = postMap[plan.targetQuestionType.id];
+    const posterior = postMap[planNonNull.targetQuestionType.id];
 
     // Phase 1.5: assemble session record (NOT yet saved — wait for user action).
     const endedAt = new Date().toISOString();
@@ -114,10 +157,10 @@ export default function QueuePage() {
       startedAt: sessionStart,
       endedAt,
       durationSec,
-      targetQuestionType: plan.targetQuestionType.id,
-      algorithm: plan.algorithm,
-      confidence: plan.confidence,
-      alternateQuestionType: plan.alternateQuestionType.id,
+      targetQuestionType: planNonNull.targetQuestionType.id,
+      algorithm: planNonNull.algorithm,
+      confidence: planNonNull.confidence,
+      alternateQuestionType: planNonNull.alternateQuestionType.id,
       correct,
       total: responses.length,
       advancements,
@@ -159,38 +202,41 @@ export default function QueuePage() {
           F3 · Learning Queue
         </p>
         <h1 className="text-2xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">
-          학습 큐 — {plan.targetQuestionType.name}
+          학습 큐 — {planNonNull.targetQuestionType.name}
         </h1>
         <div className="flex flex-wrap items-center gap-2">
           <span
             className={[
               "rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wider",
-              plan.algorithm === "thompson-v2"
+              planNonNull.algorithm === "thompson-v2"
                 ? "bg-violet-100 text-violet-800 dark:bg-violet-950 dark:text-violet-200"
                 : "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300",
             ].join(" ")}
           >
-            {plan.algorithm}
+            {planNonNull.algorithm}
           </span>
           <span
             className={[
               "rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wider",
-              plan.confidence === "high"
+              planNonNull.confidence === "high"
                 ? "bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-200"
-                : plan.confidence === "mid"
+                : planNonNull.confidence === "mid"
                   ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-950 dark:text-yellow-200"
                   : "bg-zinc-100 text-zinc-600 dark:bg-zinc-900 dark:text-zinc-400",
             ].join(" ")}
           >
-            confidence: {plan.confidence}
+            confidence: {planNonNull.confidence}
           </span>
           <span className="text-xs text-zinc-500">
-            대안: {plan.alternateQuestionType.name}
+            대안: {planNonNull.alternateQuestionType.name}
+          </span>
+          <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[10px] uppercase tracking-wider text-sky-800 dark:bg-sky-950 dark:text-sky-200">
+            gen: {planNonNull.generator}
           </span>
         </div>
         <p className="text-sm leading-6 text-zinc-600 dark:text-zinc-400">
-          약점 추정 정답률: {(plan.predictedCorrectness * 100).toFixed(0)}% · 차원:{" "}
-          {plan.targetDimensions.join(", ")} · 총 {totalCards}문항 · Leitner 5-Box SR
+          약점 추정 정답률: {(planNonNull.predictedCorrectness * 100).toFixed(0)}% · 차원:{" "}
+          {planNonNull.targetDimensions.join(", ")} · 총 {totalCards}문항 · Leitner 5-Box SR
         </p>
         <p className="text-xs text-zinc-500">
           ※ 어휘 풀: vocabulary-db (484 unique lemmas, 486 cards). 룰엔진: PRD §B-4.
@@ -291,14 +337,14 @@ export default function QueuePage() {
             />
             <Stat
               label="차원"
-              value={dimensionsInQueue(plan.cards).join(", ")}
+              value={dimensionsInQueue(planNonNull.cards).join(", ")}
             />
           </dl>
 
           {summary.posterior && (
             <div className="flex flex-col gap-1 rounded-md bg-zinc-50 px-3 py-2 text-xs dark:bg-zinc-900">
               <p className="font-medium text-zinc-700 dark:text-zinc-300">
-                Thompson posterior — {plan.targetQuestionType.name}
+                Thompson posterior — {planNonNull.targetQuestionType.name}
               </p>
               <p className="text-zinc-600 dark:text-zinc-400">
                 α={summary.posterior.alpha.toFixed(1)} · β={summary.posterior.beta.toFixed(1)} ·
