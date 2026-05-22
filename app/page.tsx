@@ -10,7 +10,7 @@ const FEATURES = [
   {
     href: "/map",
     title: "F2. Ontology Map",
-    body: "16 마이크로스킬 노드 + 21 keyVariables + 의존성 엣지 (Cytoscape.js).",
+    body: "10 QuestionType + 21 keyVariables + 7 DistractorType (Cytoscape.js).",
     status: "scaffold",
   },
   {

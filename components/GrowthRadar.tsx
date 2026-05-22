@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import {
   Chart,
+  RadarController,
   RadialLinearScale,
   PointElement,
   LineElement,
@@ -13,7 +14,15 @@ import {
 } from "chart.js";
 import type { VocabDimension } from "@/lib/diagnostic";
 
-Chart.register(RadialLinearScale, PointElement, LineElement, Filler, Tooltip, Legend);
+Chart.register(
+  RadarController,
+  RadialLinearScale,
+  PointElement,
+  LineElement,
+  Filler,
+  Tooltip,
+  Legend
+);
 
 const DIMS: VocabDimension[] = [
   "D1_Form",

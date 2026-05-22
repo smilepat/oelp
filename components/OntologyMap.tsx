@@ -141,6 +141,11 @@ export function OntologyMap({ scores, height = 560, onNodeClick }: Props) {
       });
     }
 
+    // Expose cy instance in dev mode for debugging/testing
+    if (process.env.NODE_ENV !== "production" && typeof window !== "undefined") {
+      (window as unknown as { __oelpCy?: Core }).__oelpCy = cyRef.current;
+    }
+
     return () => {
       cyRef.current?.destroy();
       cyRef.current = null;
