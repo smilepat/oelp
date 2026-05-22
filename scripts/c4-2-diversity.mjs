@@ -12,8 +12,9 @@
  *   3. Measure lemma overlap between consecutive queues (Jaccard index).
  *   4. Pass criterion: median Jaccard overlap < 0.30 (i.e., > 70% unique words across runs).
  *
- * Limitation: Currently uses STUB_POOL (30 cards). Real validation requires
- * vocabulary-db mount (~9,183 words). Report explicitly flags this scope.
+ * 2026-05-23 update: STUB_POOL replaced by VOCAB_POOL (486 cards / 484 lemmas
+ * from vocabulary-db irt-5D-vocab-db-4opt-filtered.csv). Pool loaded by parsing
+ * lib/vocabulary-pool.ts via regex extraction (avoids TS loader requirement).
  *
  * Output: markdown report to stdout.
  */
@@ -45,41 +46,34 @@ const QUESTION_TYPES = [
 
 const DIMS = ["D1_Form", "D2_Meaning", "D3_Context", "D4_Network", "D5_Usage"];
 
-// ─── Mirror lib/queue.ts STUB_POOL (15 seeds × 2 difficulty variants) ─
+// ─── Load VOCAB_POOL by regex-parsing lib/vocabulary-pool.ts ──────
 
-const SEEDS = [
-  { word: "psychology", dimension: "D1_Form", cefr: "B2" },
-  { word: "rhythm", dimension: "D1_Form", cefr: "B1" },
-  { word: "necessary", dimension: "D1_Form", cefr: "B1" },
-  { word: "intricate", dimension: "D2_Meaning", cefr: "C1" },
-  { word: "alleviate", dimension: "D2_Meaning", cefr: "B2" },
-  { word: "scrutinize", dimension: "D2_Meaning", cefr: "C1" },
-  { word: "ostensible", dimension: "D3_Context", cefr: "C1" },
-  { word: "underscore", dimension: "D3_Context", cefr: "B2" },
-  { word: "tantamount", dimension: "D3_Context", cefr: "C1" },
-  { word: "rigorous", dimension: "D4_Network", cefr: "B2" },
-  { word: "augment", dimension: "D4_Network", cefr: "B2" },
-  { word: "veracity", dimension: "D4_Network", cefr: "C1" },
-  { word: "adhere", dimension: "D5_Usage", cefr: "B2" },
-  { word: "consist", dimension: "D5_Usage", cefr: "B1" },
-  { word: "comply", dimension: "D5_Usage", cefr: "B2" },
-];
-
-function cefrOffset(cefr) {
-  if (cefr === "C1") return 0.5;
-  if (cefr === "B2") return 0.2;
-  return 0;
-}
-
-const STUB_POOL = SEEDS.flatMap((s, i) =>
-  [-0.5, 0.5].map((bOffset, j) => ({
-    itemId: `stub-${i}-${j}`,
-    word: s.word,
-    dimension: s.dimension,
-    cefr: s.cefr,
-    difficulty: bOffset + cefrOffset(s.cefr),
-  }))
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const POOL_TS = readFileSync(
+  join(__dirname, "..", "lib", "vocabulary-pool.ts"),
+  "utf-8"
 );
+// Extract each card object literal (between `{ itemId:` and the closing `}`)
+function loadPool() {
+  const cards = [];
+  // Match each card block
+  const cardRegex = /\{\s*itemId:\s*"([^"]+)",\s*word:\s*"([^"]+)",\s*pos:[^,]*,\s*cefr:\s*"([^"]+)",\s*dimension:\s*"(D[1-5]_[A-Za-z]+)"[^,]*,\s*difficulty:\s*(-?[\d.]+),/g;
+  let m;
+  while ((m = cardRegex.exec(POOL_TS))) {
+    cards.push({
+      itemId: m[1],
+      word: m[2],
+      cefr: m[3],
+      dimension: m[4],
+      difficulty: parseFloat(m[5]),
+    });
+  }
+  return cards;
+}
+const STUB_POOL = loadPool();
 
 function predictCorrectness(scores, qt) {
   let sum = 0;
@@ -112,12 +106,18 @@ function buildQueue(diag, opts = {}) {
     );
   }
   const cards = [];
+  const slotsPerDim = Math.ceil(sessionSize / targetDims.length);
   for (const dim of targetDims) {
-    const dimCards = candidates
+    const ranked = candidates
       .filter((c) => c.dimension === dim)
-      .sort((a, b) => a.difficulty - b.difficulty)
-      .slice(0, Math.ceil(sessionSize / targetDims.length));
-    cards.push(...dimCards);
+      .sort((a, b) => Math.abs(a.difficulty - diag.theta) - Math.abs(b.difficulty - diag.theta))
+      .slice(0, slotsPerDim * 2);
+    // Fisher-Yates shuffle for diversity (matches lib/queue.ts).
+    for (let i = ranked.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [ranked[i], ranked[j]] = [ranked[j], ranked[i]];
+    }
+    cards.push(...ranked.slice(0, slotsPerDim));
   }
   return { targetQT: target.qt.name, targetDims, cards: cards.slice(0, sessionSize) };
 }
@@ -208,11 +208,13 @@ console.log(`- **Pairwise Jaccard median**: ${pct(median)} (목표 < ${pct(PASS_
 console.log(`- Jaccard range: ${pct(min)} ~ ${pct(max)}`);
 console.log(`- 5회 큐 누적 unique lemma: ${allLemmas.size} / ${totalCards} (${pct(uniqueRatio)})`);
 console.log("");
-console.log(`**최종 판정**: ${passed ? "PASS (STUB_POOL scope)" : "FAIL"} — 실제 vocabulary-db (9,183 어휘) 마운트 후 재검증 권장`);
+console.log(`**최종 판정**: ${passed ? "PASS" : "FAIL"} — VOCAB_POOL (vocabulary-db irt-5D-vocab-db-4opt-filtered.csv) ${STUB_POOL.length} cards / ${new Set(STUB_POOL.map(c => c.word)).size} unique lemmas 사용.`);
 console.log("");
-console.log("## ⚠️ Scope 한계");
+console.log("## Pool 정보 (2026-05-23 update)");
 console.log("");
-console.log(`본 검증은 \`STUB_POOL\` 30 카드 (15 lemma × 2 difficulty)에서 실행됨. 실제 vocabulary-db는 9,183 어휘이므로 다양성 잠재력이 ${Math.round(9183 / 15)}배 큼. 본 결과는 \"룰엔진의 다양성 보장 메커니즘이 작동하는지\"의 scaffold-level 확인이며, 실제 다양성 수치는 vocabulary-db 마운트 후 의미 있음.`);
+console.log(`- 출처: smilepat/vocabulary-db/irt-5D-vocab-db-4opt-filtered.csv (8,363 단어 × 63K 문항)`);
+console.log(`- 샘플링: \`scripts/build-vocab-pool.mjs\` 가 5D × 7 difficulty bands 균형 추출`);
+console.log(`- 현재 풀: ${STUB_POOL.length} cards, ${new Set(STUB_POOL.map(c => c.word)).size} unique lemmas`);
 console.log("");
 console.log("---");
 console.log("");

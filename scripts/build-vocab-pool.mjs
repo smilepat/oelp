@@ -1,0 +1,233 @@
+#!/usr/bin/env node
+/**
+ * Build lib/vocabulary-pool.ts from vocabulary-db's irt-5D-vocab-db-4opt-filtered.csv.
+ *
+ * Strategy:
+ *   - Source: data/irt-5D-vocab.csv (63,331 items, 8,363 words; D1-D5 dimension labeled, IRT b/a)
+ *   - Sample ~500 items balanced across (D1-D5) × (3 difficulty bands)
+ *   - Output: lib/vocabulary-pool.ts as static TS module (compiled into bundle)
+ *
+ * Not checked into repo: data/*.csv (private vocabulary-db source, gitignored).
+ * Output (lib/vocabulary-pool.ts) IS checked in — embedded pool ~500 items.
+ *
+ * Rationale: avoids runtime CSV parsing, replaces STUB_POOL with real lemmas,
+ * unlocks C4.2 re-validation (>15 unique lemmas → meaningful Jaccard < 30%).
+ */
+
+import { readFileSync, writeFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const CSV_PATH = join(__dirname, "..", "data", "irt-5D-vocab.csv");
+const OUT_PATH = join(__dirname, "..", "lib", "vocabulary-pool.ts");
+
+// ─── 1. Parse CSV ───────────────────────────────────────────────────
+
+// Robust CSV parser supporting embedded newlines + commas + escaped quotes within quoted fields.
+function parseCSV(text) {
+  const rows = [];
+  let current = [];
+  let field = "";
+  let inQuotes = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQuotes) {
+      if (c === '"' && text[i + 1] === '"') {
+        field += '"';
+        i++;
+      } else if (c === '"') {
+        inQuotes = false;
+      } else {
+        field += c;
+      }
+    } else {
+      if (c === '"') {
+        inQuotes = true;
+      } else if (c === ",") {
+        current.push(field);
+        field = "";
+      } else if (c === "\n") {
+        current.push(field);
+        rows.push(current);
+        current = [];
+        field = "";
+      } else if (c === "\r") {
+        // skip CR; LF will commit
+      } else {
+        field += c;
+      }
+    }
+  }
+  if (field.length || current.length) {
+    current.push(field);
+    rows.push(current);
+  }
+  return rows;
+}
+
+const raw = readFileSync(CSV_PATH, "utf-8");
+const csvText = raw.charCodeAt(0) === 0xfeff ? raw.slice(1) : raw;
+const allRows = parseCSV(csvText);
+const header = allRows[0];
+
+const idx = {
+  itemId: header.indexOf("Item_ID"),
+  word: header.indexOf("Word"),
+  dim: header.indexOf("Dimension"),
+  b: header.indexOf("b_value"),
+  a: header.indexOf("a_value"),
+  band: header.indexOf("Difficulty_Band"),
+  question: header.indexOf("Question_Text"),
+  a_opt: header.indexOf("Option_A"),
+  b_opt: header.indexOf("Option_B"),
+  c_opt: header.indexOf("Option_C"),
+  d_opt: header.indexOf("Option_D"),
+  answer: header.indexOf("Answer"),
+};
+
+const rows = [];
+for (let i = 1; i < allRows.length; i++) {
+  const f = allRows[i];
+  if (!f || f.length < header.length) continue;
+  rows.push({
+    itemId: f[idx.itemId],
+    word: f[idx.word],
+    dimension: f[idx.dim],
+    bValue: parseFloat(f[idx.b]),
+    aValue: parseFloat(f[idx.a]),
+    band: parseInt(f[idx.band], 10),
+    question: f[idx.question],
+    options: [f[idx.a_opt], f[idx.b_opt], f[idx.c_opt], f[idx.d_opt]],
+    answerKey: f[idx.answer],
+  });
+}
+
+console.error(`Parsed ${rows.length} items from CSV`);
+
+// ─── 2. Sample balanced across (dimension × difficulty band) ────────
+
+const DIMS = ["D1_Form", "D2_Meaning", "D3_Context", "D4_Network", "D5_Usage"];
+const BANDS = [1, 2, 3, 4, 5, 6, 7];
+
+// Target: ~100 items per dimension (≈500 total), distributed across bands
+const TARGET_PER_DIM = 100;
+const TARGET_PER_BIN = Math.ceil(TARGET_PER_DIM / BANDS.length);
+
+const sampled = [];
+const seenWords = new Set();
+
+for (const dim of DIMS) {
+  for (const band of BANDS) {
+    const pool = rows.filter(
+      (r) =>
+        r.dimension === dim &&
+        r.band === band &&
+        r.options.every((o) => o && o.trim()) &&
+        /[A-D]/.test(r.answerKey) &&
+        r.question.trim()
+    );
+    // Prefer unique words across the whole pool to maximize lemma diversity (C4.2)
+    const uniqPool = pool.filter((r) => !seenWords.has(r.word));
+    const useFromUniq = Math.min(TARGET_PER_BIN, uniqPool.length);
+    for (let i = 0; i < useFromUniq; i++) {
+      const picked = uniqPool[Math.floor((i * uniqPool.length) / Math.max(1, useFromUniq))];
+      if (!picked) break;
+      sampled.push(picked);
+      seenWords.add(picked.word);
+    }
+  }
+}
+
+console.error(`Sampled ${sampled.length} items, ${seenWords.size} unique words`);
+
+// ─── 3. CEFR heuristic from band (band 1-7 → CEFR A1-C2) ────────────
+
+function bandToCefr(band) {
+  if (band <= 1) return "A1";
+  if (band <= 2) return "A2";
+  if (band <= 3) return "B1";
+  if (band <= 5) return "B2";
+  if (band <= 6) return "C1";
+  return "C2";
+}
+
+// ─── 4. Emit lib/vocabulary-pool.ts ─────────────────────────────────
+
+function safe(s) {
+  return JSON.stringify(s ?? "");
+}
+
+const ts = `// AUTO-GENERATED by scripts/build-vocab-pool.mjs from data/irt-5D-vocab.csv.
+// Do NOT edit by hand. Re-run \`node scripts/build-vocab-pool.mjs\` to refresh.
+// Source: smilepat/vocabulary-db/irt-5D-vocab-db-4opt-filtered.csv (private).
+
+import type { VocabDimension } from "./diagnostic";
+
+export interface VocabCard {
+  itemId: string;
+  word: string;
+  pos: string;
+  cefr: string;
+  dimension: VocabDimension;
+  /** IRT b parameter (difficulty) */
+  difficulty: number;
+  /** IRT a parameter (discrimination) */
+  discrimination: number;
+  meaningKo: string;
+  questionText: string;
+  options: string[];
+  /** 0-based index into options */
+  answerIdx: number;
+  rationaleKo: string;
+}
+
+/**
+ * Real vocabulary pool sampled from vocabulary-db (${sampled.length} items,
+ * ${seenWords.size} unique lemmas). Balanced across D1-D5 × 7 difficulty bands.
+ */
+export const VOCAB_POOL: VocabCard[] = [
+${sampled
+  .map((r) => {
+    const answerIdx = "ABCD".indexOf(r.answerKey);
+    return `  {
+    itemId: ${safe(r.itemId)},
+    word: ${safe(r.word)},
+    pos: "",
+    cefr: "${bandToCefr(r.band)}",
+    dimension: "${r.dimension}" as VocabDimension,
+    difficulty: ${r.bValue},
+    discrimination: ${r.aValue},
+    meaningKo: "",
+    questionText: ${safe(r.question)},
+    options: ${JSON.stringify(r.options)},
+    answerIdx: ${answerIdx},
+    rationaleKo: ${safe(r.word + " (band " + r.band + ", b=" + r.bValue + ")")},
+  }`;
+  })
+  .join(",\n")},
+];
+
+/** Quick lookup for analytics + tests */
+export const VOCAB_POOL_META = {
+  totalCards: ${sampled.length},
+  uniqueWords: ${seenWords.size},
+  source: "vocabulary-db/irt-5D-vocab-db-4opt-filtered.csv",
+  generatedAt: ${JSON.stringify(new Date().toISOString())},
+};
+`;
+
+writeFileSync(OUT_PATH, ts);
+console.error(`Wrote ${OUT_PATH} (${(ts.length / 1024).toFixed(1)} KB)`);
+
+// ─── 5. Summary stats to stdout (for log) ────────────────────────────
+
+const byDim = {};
+for (const r of sampled) byDim[r.dimension] = (byDim[r.dimension] || 0) + 1;
+console.log(JSON.stringify({
+  totalCards: sampled.length,
+  uniqueWords: seenWords.size,
+  perDimension: byDim,
+  outputPath: "lib/vocabulary-pool.ts",
+  sourceFile: "data/irt-5D-vocab.csv",
+}, null, 2));

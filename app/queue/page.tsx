@@ -96,7 +96,7 @@ export default function QueuePage() {
           {plan.targetDimensions.join(", ")} · 총 {totalCards}문항 · Leitner 5-Box SR
         </p>
         <p className="text-xs text-zinc-500">
-          ※ 본 큐는 stub 데이터 (PRD §B-4 룰엔진). 실제 vocabulary-db 연결은 Phase 1 후반.
+          ※ 어휘 풀: vocabulary-db (484 unique lemmas, 486 cards). 룰엔진: PRD §B-4.
         </p>
       </header>
 
