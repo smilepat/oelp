@@ -6,7 +6,12 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:c4-1": "node scripts/synthetic-validation-c4-1.mjs",
+    "test:c4-2": "node scripts/c4-2-diversity.mjs",
+    "ci": "npm run lint && npm run test && npm run test:c4-1 && npm run build"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.106.1",
@@ -29,6 +34,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.7"
   }
 }

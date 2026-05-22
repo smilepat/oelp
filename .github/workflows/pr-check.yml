@@ -1,0 +1,62 @@
+name: PR Check (P-1 W7)
+
+# Runs on every PR: Vitest + lint + build + C4.1 regression.
+# Phase 2 P-1 W7 — auto-block PRs that break units or shift dimension-mapping
+# weights below the C4.1 gate.
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install deps
+        run: npm ci
+
+      - name: ESLint
+        run: npm run lint
+
+      - name: Vitest (39 unit tests)
+        run: npm test
+
+      - name: C4.1 dimension-mapping regression
+        run: |
+          mkdir -p out
+          node scripts/synthetic-validation-c4-1.mjs > out/c4-1-pr-check.md
+          # Verify still PASS — fail if either gate breaches
+          TAU=$(grep "Kendall tau (median)" out/c4-1-pr-check.md | grep -oE "[0-9]+\.[0-9]+" | head -1)
+          CONT=$(grep "도메인 모순 (50셀 중)" out/c4-1-pr-check.md | grep -oE "[0-9]+" | head -1)
+          echo "C4.1: tau=$TAU contradictions=$CONT"
+          awk -v t="$TAU" 'BEGIN { exit (t < 0.4) ? 1 : 0 }' || { echo "::error::C4.1 FAIL (tau $TAU < 0.4)"; exit 1; }
+          if [ "$CONT" != "0" ]; then echo "::error::C4.1 FAIL ($CONT contradictions)"; exit 1; fi
+          echo "::notice::C4.1 PASS (tau $TAU, $CONT contradictions)"
+
+      - name: C4.2 diversity sanity check
+        run: |
+          node scripts/c4-2-diversity.mjs > out/c4-2-pr-check.md
+          # C4.2 is probabilistic — log but don't gate
+          grep "Jaccard median" out/c4-2-pr-check.md || true
+
+      - name: Next.js build
+        run: npm run build
+
+      - name: Upload C4 reports
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: c4-pr-reports
+          path: out/c4-*-pr-check.md
