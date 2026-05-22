@@ -126,3 +126,92 @@ export function buildQueue(
 export function dimensionsInQueue(cards: VocabCard[]): VocabDimension[] {
   return Array.from(new Set(cards.map((c) => c.dimension)));
 }
+
+// ─── V2: Thompson sampling integration (P-1 W3) ────────────────────
+
+import type { BetaPosterior, ConfidenceLevel } from "./recommendation";
+import { recommendQuestionType } from "./recommendation";
+
+export interface QueuePlanV2 extends QueuePlan {
+  /** Confidence in the target QT selection */
+  confidence: ConfidenceLevel;
+  /** Algorithm used (rule-v1-fallback when posterior data insufficient) */
+  algorithm: "rule-v1-fallback" | "thompson-v2";
+  /** Runner-up target (top-2 by sampled θ) — useful when confidence is low */
+  alternateQuestionType: QuestionType;
+  /** Sampled θ value for the chosen target (rule-v1: predictCorrectness) */
+  targetThetaSample: number;
+}
+
+/**
+ * V2 queue builder — replaces deterministic argmin(predictCorrectness) with
+ * Thompson sampling over Beta posteriors.
+ *
+ * Card selection (dim filter, b window, shuffle) is identical to V1 once
+ * the target QuestionType is chosen.
+ *
+ * Pure function: posteriors are passed in by the caller (typically loaded
+ * from lib/recommendation-store.ts at page level).
+ */
+export function buildQueueV2(
+  diag: DiagnosticInput,
+  posteriors: Record<string, BetaPosterior>,
+  opts: QueueOpts = {}
+): QueuePlanV2 {
+  const sessionSize = opts.sessionSize ?? 10;
+  const halfWidth = opts.difficultyHalfWidth ?? 0.4;
+
+  // 1. Thompson recommendation (or rule-v1 fallback)
+  const rec = recommendQuestionType(diag.dimensionScores, posteriors);
+  const target = rec.targetQuestionType;
+
+  // 2. Top-2 dimensions by weight (unchanged from V1)
+  const dimsRanked = (Object.entries(target.weights) as Array<[VocabDimension, number]>)
+    .sort((a, b) => b[1] - a[1])
+    .map(([d]) => d);
+  const targetDims = dimsRanked.slice(0, 2);
+
+  // 3. Filter pool + difficulty window (identical to V1)
+  const bMin = diag.theta - halfWidth;
+  const bMax = diag.theta + halfWidth;
+  let candidates = POOL.filter(
+    (c) => targetDims.includes(c.dimension) && c.difficulty >= bMin && c.difficulty <= bMax
+  );
+  if (candidates.length < sessionSize) {
+    candidates = POOL.filter(
+      (c) =>
+        targetDims.includes(c.dimension) &&
+        c.difficulty >= bMin - 0.6 &&
+        c.difficulty <= bMax + 0.6
+    );
+  }
+
+  // 4. Closeness sort + shuffle (V1 diversity mechanism)
+  const cards: VocabCard[] = [];
+  const slotsPerDim = Math.ceil(sessionSize / targetDims.length);
+  for (const dim of targetDims) {
+    const ranked = candidates
+      .filter((c) => c.dimension === dim)
+      .sort(
+        (a, b) =>
+          Math.abs(a.difficulty - diag.theta) - Math.abs(b.difficulty - diag.theta)
+      )
+      .slice(0, slotsPerDim * 2);
+    for (let i = ranked.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [ranked[i], ranked[j]] = [ranked[j], ranked[i]];
+    }
+    cards.push(...ranked.slice(0, slotsPerDim));
+  }
+
+  return {
+    targetQuestionType: target,
+    predictedCorrectness: rec.targetThetaSample,
+    targetDimensions: targetDims,
+    cards: cards.slice(0, sessionSize),
+    confidence: rec.confidence,
+    algorithm: rec.algorithm,
+    alternateQuestionType: rec.alternateQuestionType,
+    targetThetaSample: rec.targetThetaSample,
+  };
+}

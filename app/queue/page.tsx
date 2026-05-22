@@ -2,14 +2,17 @@
 
 import { useMemo, useState } from "react";
 import { DEMO_DIAGNOSTIC } from "@/lib/diagnostic";
-import { buildQueue, dimensionsInQueue, type VocabCard } from "@/lib/queue";
+import { buildQueueV2, dimensionsInQueue, type VocabCard } from "@/lib/queue";
 import {
   applyResponses,
   countAdvancements,
   loadSRMap,
   type SRState,
 } from "@/lib/leitner";
-import { persistSessionResponses } from "@/lib/recommendation-store";
+import {
+  loadPosteriors,
+  persistSessionResponses,
+} from "@/lib/recommendation-store";
 import { posteriorConfidence, type BetaPosterior } from "@/lib/recommendation";
 
 interface Response {
@@ -21,7 +24,10 @@ interface Response {
 }
 
 export default function QueuePage() {
-  const plan = useMemo(() => buildQueue(DEMO_DIAGNOSTIC), []);
+  const plan = useMemo(() => {
+    const posteriors = loadPosteriors(DEMO_DIAGNOSTIC.dimensionScores);
+    return buildQueueV2(DEMO_DIAGNOSTIC, posteriors);
+  }, []);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
   const [revealed, setRevealed] = useState(false);
@@ -111,6 +117,33 @@ export default function QueuePage() {
         <h1 className="text-2xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">
           학습 큐 — {plan.targetQuestionType.name}
         </h1>
+        <div className="flex flex-wrap items-center gap-2">
+          <span
+            className={[
+              "rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wider",
+              plan.algorithm === "thompson-v2"
+                ? "bg-violet-100 text-violet-800 dark:bg-violet-950 dark:text-violet-200"
+                : "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300",
+            ].join(" ")}
+          >
+            {plan.algorithm}
+          </span>
+          <span
+            className={[
+              "rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wider",
+              plan.confidence === "high"
+                ? "bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-200"
+                : plan.confidence === "mid"
+                  ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-950 dark:text-yellow-200"
+                  : "bg-zinc-100 text-zinc-600 dark:bg-zinc-900 dark:text-zinc-400",
+            ].join(" ")}
+          >
+            confidence: {plan.confidence}
+          </span>
+          <span className="text-xs text-zinc-500">
+            대안: {plan.alternateQuestionType.name}
+          </span>
+        </div>
         <p className="text-sm leading-6 text-zinc-600 dark:text-zinc-400">
           약점 추정 정답률: {(plan.predictedCorrectness * 100).toFixed(0)}% · 차원:{" "}
           {plan.targetDimensions.join(", ")} · 총 {totalCards}문항 · Leitner 5-Box SR
