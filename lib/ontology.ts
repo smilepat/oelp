@@ -33,7 +33,8 @@ export const QUESTION_TYPES: QuestionType[] = [
     numberRange: "18",
     pointValue: 2,
     keyVariables: ["purpose_indirectness", "text_type_variation"],
-    weights: { D1_Form: 0.05, D2_Meaning: 0.2, D3_Context: 0.55, D4_Network: 0.1, D5_Usage: 0.1 },
+    // v2 (2026-05-22): D2 0.20→0.10, D5 0.10→0.25 (text_type_variation evidence)
+    weights: { D1_Form: 0.05, D2_Meaning: 0.1, D3_Context: 0.5, D4_Network: 0.1, D5_Usage: 0.25 },
   },
   {
     id: "TYPE-심경",
@@ -41,7 +42,8 @@ export const QUESTION_TYPES: QuestionType[] = [
     numberRange: "19-20",
     pointValue: 2,
     keyVariables: ["emotional_indirectness", "emotion_vocab_density"],
-    weights: { D1_Form: 0.05, D2_Meaning: 0.25, D3_Context: 0.45, D4_Network: 0.2, D5_Usage: 0.05 },
+    // v2 (2026-05-22): D4 0.20→0.10 (no network keyVar), D2 0.25→0.35 (emotion_vocab_density)
+    weights: { D1_Form: 0.05, D2_Meaning: 0.35, D3_Context: 0.4, D4_Network: 0.1, D5_Usage: 0.1 },
   },
   {
     id: "TYPE-주장",
@@ -49,7 +51,8 @@ export const QUESTION_TYPES: QuestionType[] = [
     numberRange: "22",
     pointValue: 2,
     keyVariables: ["claim_explicitness", "argument_structure"],
-    weights: { D1_Form: 0.05, D2_Meaning: 0.2, D3_Context: 0.5, D4_Network: 0.15, D5_Usage: 0.1 },
+    // v2 (2026-05-22): D2 0.20→0.10, D5 0.10→0.20 (argument_structure)
+    weights: { D1_Form: 0.05, D2_Meaning: 0.1, D3_Context: 0.55, D4_Network: 0.1, D5_Usage: 0.2 },
   },
   {
     id: "TYPE-요지",
@@ -57,7 +60,8 @@ export const QUESTION_TYPES: QuestionType[] = [
     numberRange: "23",
     pointValue: 2,
     keyVariables: ["topic_abstractness", "topic_sentence_position"],
-    weights: { D1_Form: 0.05, D2_Meaning: 0.2, D3_Context: 0.5, D4_Network: 0.15, D5_Usage: 0.1 },
+    // v2 (2026-05-22): D2 0.20→0.10, D4 0.15→0.25 (topic_abstractness has D4 component)
+    weights: { D1_Form: 0.05, D2_Meaning: 0.1, D3_Context: 0.5, D4_Network: 0.25, D5_Usage: 0.1 },
   },
   {
     id: "TYPE-주제",
@@ -73,7 +77,8 @@ export const QUESTION_TYPES: QuestionType[] = [
     numberRange: "25",
     pointValue: 2,
     keyVariables: ["title_abstractness", "metaphor_density"],
-    weights: { D1_Form: 0.05, D2_Meaning: 0.2, D3_Context: 0.4, D4_Network: 0.3, D5_Usage: 0.05 },
+    // v2 (2026-05-22): D2 0.20→0.10, D4 0.30→0.40 (metaphor_density is primary D4)
+    weights: { D1_Form: 0.05, D2_Meaning: 0.1, D3_Context: 0.35, D4_Network: 0.4, D5_Usage: 0.1 },
   },
   {
     id: "TYPE-빈칸추론",
