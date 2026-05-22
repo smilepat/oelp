@@ -2,9 +2,7 @@
  * Phase 2 P-2 — Content validators for VocabCard.
  *
  * Spec: docs/02-design/phase2-p2-ebs-demo-foundation.md §2.4
- *
- * 9-rule chain ported from EBS-demo's item-validator.ts pattern but adapted
- * to OELP's VocabCard schema (4-option multiple choice, single dimension).
+ * 12-rule total (V1-V9 Foundation, V10-V12 added in W6 from EBS-demo).
  *
  * V1: Structure       — itemId, word, dimension non-empty
  * V2: Options shape   — options.length === 4
@@ -15,6 +13,9 @@
  * V7: Dimension valid — one of D1_Form..D5_Usage
  * V8: CEFR valid      — A1..C2
  * V9: questionText    — non-empty + length ≥ 5
+ * V10: Option language — by-dimension expected (D2/D3 Korean, others English)
+ * V11: Question Korean — questionText contains Hangul (warning)
+ * V12: Batch duplicates — no two cards share questionText (batch-level)
  *
  * Pure functions. No I/O. Used by ContentGenerator implementations.
  */
@@ -226,6 +227,69 @@ const v9QuestionText: Validator = (card, idx) => {
   return [];
 };
 
+// ─── V10-V12 (EBS-demo W6 porting) ──────────────────────────────────
+
+const HANGUL_REGEX = /[가-힣]/;
+
+function containsHangul(s: string): boolean {
+  return HANGUL_REGEX.test(s);
+}
+
+/**
+ * Expected option language per dimension:
+ * - D1_Form: English (spelling variants)
+ * - D2_Meaning: Korean (translation/definition)
+ * - D3_Context: Korean (Korean inference of contextual meaning)
+ * - D4_Network: English (synonyms/antonyms — English-to-English)
+ * - D5_Usage: English (collocations/grammar patterns)
+ */
+const DIMENSION_OPTION_LANG: Record<VocabDimension, "english" | "korean"> = {
+  D1_Form: "english",
+  D2_Meaning: "korean",
+  D3_Context: "korean",
+  D4_Network: "english",
+  D5_Usage: "english",
+};
+
+const v10OptionLanguage: Validator = (card, idx) => {
+  if (!Array.isArray(card.options) || card.options.length === 0) return [];
+  if (!VALID_DIMS.includes(card.dimension)) return [];
+  const expected = DIMENSION_OPTION_LANG[card.dimension];
+  const hangulRatio =
+    card.options.filter((o) => containsHangul(o ?? "")).length / card.options.length;
+
+  if (expected === "english" && hangulRatio > 0.3) {
+    return [{
+      cardIndex: idx,
+      code: "V10_OPTIONS_LANG_MISMATCH",
+      message: `${card.dimension}: options should be English; Korean ratio=${hangulRatio.toFixed(2)}`,
+      severity: "warning",
+    }];
+  }
+  if (expected === "korean" && hangulRatio < 0.5) {
+    return [{
+      cardIndex: idx,
+      code: "V10_OPTIONS_LANG_MISMATCH",
+      message: `${card.dimension}: options should be Korean; Korean ratio=${hangulRatio.toFixed(2)}`,
+      severity: "warning",
+    }];
+  }
+  return [];
+};
+
+const v11QuestionKorean: Validator = (card, idx) => {
+  if (!card.questionText) return [];
+  if (!containsHangul(card.questionText)) {
+    return [{
+      cardIndex: idx,
+      code: "V11_QUESTION_NOT_KOREAN",
+      message: "questionText에 한국어가 없습니다 (학습자가 인식 못 할 수 있음)",
+      severity: "warning",
+    }];
+  }
+  return [];
+};
+
 const VALIDATORS: Validator[] = [
   v1Structure,
   v2OptionsShape,
@@ -236,6 +300,8 @@ const VALIDATORS: Validator[] = [
   v7DimensionValid,
   v8CefrValid,
   v9QuestionText,
+  v10OptionLanguage,
+  v11QuestionKorean,
 ];
 
 /** Run all 9 validators on a single card. */
@@ -245,21 +311,60 @@ export function validateCard(card: VocabCard, idx = 0): ValidatorIssue[] {
   return out;
 }
 
+/** V12: Batch-level duplicate questionText (cross-card). */
+function v12BatchDuplicates(cards: VocabCard[]): ValidatorIssue[] {
+  const stemIndices = new Map<string, number[]>();
+  for (let i = 0; i < cards.length; i++) {
+    const stem = (cards[i].questionText ?? "").trim().toLowerCase();
+    if (!stem) continue;
+    if (!stemIndices.has(stem)) stemIndices.set(stem, []);
+    stemIndices.get(stem)!.push(i);
+  }
+  const issues: ValidatorIssue[] = [];
+  for (const indices of stemIndices.values()) {
+    if (indices.length <= 1) continue;
+    for (const idx of indices) {
+      issues.push({
+        cardIndex: idx,
+        code: "V12_DUPLICATE_STEM",
+        message: `questionText가 다른 카드들과 중복: cards [${indices.join(", ")}]`,
+        severity: "warning",
+      });
+    }
+  }
+  return issues;
+}
+
 /** Run all validators on a batch of cards. */
 export function validateCardBatch(cards: VocabCard[]): ValidationResult {
   const allIssues: ValidatorIssue[] = [];
-  const perCard: ValidationResult["perCard"] = [];
+  const perCardIssueCount: number[] = new Array(cards.length).fill(0);
+  const perCardErrorCount: number[] = new Array(cards.length).fill(0);
 
+  // Per-card V1-V11
   for (let i = 0; i < cards.length; i++) {
     const issues = validateCard(cards[i], i);
     allIssues.push(...issues);
-    const errors = issues.filter((iss) => iss.severity === "error");
-    perCard.push({
-      cardIndex: i,
-      status: errors.length > 0 ? "fail" : issues.length > 0 ? "warn" : "pass",
-      issueCount: issues.length,
-    });
+    perCardIssueCount[i] += issues.length;
+    perCardErrorCount[i] += issues.filter((iss) => iss.severity === "error").length;
   }
+
+  // V12: batch-level
+  const batchIssues = v12BatchDuplicates(cards);
+  allIssues.push(...batchIssues);
+  for (const iss of batchIssues) {
+    if (iss.cardIndex >= 0 && iss.cardIndex < cards.length) {
+      perCardIssueCount[iss.cardIndex]++;
+      if (iss.severity === "error") perCardErrorCount[iss.cardIndex]++;
+    }
+  }
+
+  const perCard: ValidationResult["perCard"] = cards.map((_, i) => ({
+    cardIndex: i,
+    status:
+      perCardErrorCount[i] > 0 ? "fail" : perCardIssueCount[i] > 0 ? "warn" : "pass",
+    issueCount: perCardIssueCount[i],
+  }));
 
   const hasErrors = allIssues.some((iss) => iss.severity === "error");
   return {
