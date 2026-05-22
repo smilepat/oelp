@@ -1,0 +1,33 @@
+# OELP development stack.
+# vocab-cat-test is a separate repo (smilepat/vocab-cat-test, FastAPI + Python).
+# Clone it as a sibling directory first:
+#
+#   cd .. && gh repo clone smilepat/vocab-cat-test
+#
+# Then run from this directory:
+#
+#   docker compose up vocab-cat-test
+#
+# Next.js dev server stays on the host (npm run dev) — only the Python backend
+# is containerized here. Production deployment uses Vercel (Next.js) + Cloud Run
+# (vocab-cat-test) per PRD §B-8.
+
+services:
+  vocab-cat-test:
+    build:
+      context: ../vocab-cat-test
+      dockerfile: Dockerfile
+    image: oelp-vocab-cat-test:dev
+    ports:
+      - "8000:8000"
+    environment:
+      - LOG_LEVEL=info
+    volumes:
+      # vocabulary-db SQLite mounted read-only (sibling clone required)
+      - ../vocabulary-db/vocab_master.sqlite:/data/vocab_master.sqlite:ro
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s

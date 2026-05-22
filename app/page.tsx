@@ -1,65 +1,78 @@
-import Image from "next/image";
+import Link from "next/link";
+
+const FEATURES = [
+  {
+    href: "/diagnose",
+    title: "F1. 진단 (Diagnose)",
+    body: "IRT 2PL/3PL 적응형 어휘 진단. vocab-cat-test 백엔드 임베드 + 5D Radar.",
+    status: "scaffold",
+  },
+  {
+    href: "/map",
+    title: "F2. Ontology Map",
+    body: "16 마이크로스킬 노드 + 21 keyVariables + 의존성 엣지 (Cytoscape.js).",
+    status: "scaffold",
+  },
+  {
+    href: "/queue",
+    title: "F3. 학습 큐 (Learning Queue)",
+    body: "약점 QuestionType 기반 룰엔진 + Leitner 5-Box SR.",
+    status: "scaffold",
+  },
+];
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
+    <main className="mx-auto flex max-w-3xl flex-col gap-10 px-6 py-16">
+      <header className="flex flex-col gap-3">
+        <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">
+          OELP · Phase 1 MVP
+        </p>
+        <h1 className="text-3xl font-semibold leading-tight tracking-tight text-zinc-950 dark:text-zinc-50">
+          Ontology English Learning Platform
+        </h1>
+        <p className="max-w-xl text-sm leading-6 text-zinc-600 dark:text-zinc-400">
+          LogicFlow 생태계의 분산 자산(vocabulary-db, csat-graphdb-318, csat-text-master,
+          vocab-cat-test, vocab-learn-pat)을 단일 학습 경험으로 통합하는 Next.js 16 앱.
+          현재는 스캐폴드 상태 — 각 기능은 placeholder.
+        </p>
+      </header>
+
+      <section className="flex flex-col gap-3">
+        {FEATURES.map((f) => (
+          <Link
+            key={f.href}
+            href={f.href}
+            className="group flex flex-col gap-1 rounded-lg border border-zinc-200 px-5 py-4 transition-colors hover:border-zinc-400 dark:border-zinc-800 dark:hover:border-zinc-600"
+          >
+            <div className="flex items-center justify-between">
+              <h2 className="text-base font-medium text-zinc-950 dark:text-zinc-50">
+                {f.title}
+              </h2>
+              <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] uppercase tracking-wider text-zinc-600 dark:bg-zinc-900 dark:text-zinc-400">
+                {f.status}
+              </span>
+            </div>
+            <p className="text-sm leading-6 text-zinc-600 dark:text-zinc-400">
+              {f.body}
+            </p>
+          </Link>
+        ))}
+      </section>
+
+      <footer className="border-t border-zinc-200 pt-6 text-xs text-zinc-500 dark:border-zinc-800">
+        <p>
+          PRD:{" "}
           <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
+            className="underline"
+            href="https://github.com/smilepat/myprojects/blob/main/docs/01-plan/prd-oelp-mvp-phase1.md"
             target="_blank"
             rel="noopener noreferrer"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
+            docs/01-plan/prd-oelp-mvp-phase1.md
           </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+        </p>
+      </footer>
+    </main>
   );
 }
