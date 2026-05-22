@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { DEMO_DIAGNOSTIC } from "@/lib/diagnostic";
+import { getActiveDiagnostic } from "@/lib/active-diagnostic";
 import { buildQueueV2, dimensionsInQueue, type VocabCard } from "@/lib/queue";
 import {
   applyResponses,
@@ -29,10 +29,11 @@ interface Response {
 }
 
 export default function QueuePage() {
+  const diagnostic = useMemo(() => getActiveDiagnostic(), []);
   const plan = useMemo(() => {
-    const posteriors = loadPosteriors(DEMO_DIAGNOSTIC.dimensionScores);
-    return buildQueueV2(DEMO_DIAGNOSTIC, posteriors);
-  }, []);
+    const posteriors = loadPosteriors(diagnostic.dimensionScores);
+    return buildQueueV2(diagnostic, posteriors);
+  }, [diagnostic]);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
   const [revealed, setRevealed] = useState(false);
@@ -99,7 +100,7 @@ export default function QueuePage() {
     // Persist Beta posteriors for Phase 2 P-1 Thompson sampling.
     const postMap = persistSessionResponses(
       responses.map((r) => ({ qtId: r.qtId, isCorrect: r.correct })),
-      DEMO_DIAGNOSTIC.dimensionScores
+      diagnostic.dimensionScores
     );
     const posterior = postMap[plan.targetQuestionType.id];
 
@@ -126,7 +127,7 @@ export default function QueuePage() {
         itemId: r.itemId,
         qtId: r.qtId,
         isCorrect: r.correct,
-        dimensionScores: DEMO_DIAGNOSTIC.dimensionScores,
+        dimensionScores: diagnostic.dimensionScores,
         at: r.at,
       })),
     };

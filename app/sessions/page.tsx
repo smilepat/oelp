@@ -6,7 +6,10 @@ import {
   summarizeSessions,
   type SessionRecord,
 } from "@/lib/session-store";
-import { downloadCalibrationJSON } from "@/lib/session-export";
+import {
+  downloadCalibrationJSON,
+  downloadFullSessionsJSON,
+} from "@/lib/session-export";
 
 const SESSIONS_STORAGE_KEY = "oelp.sessions.default";
 
@@ -43,8 +46,12 @@ export default function SessionsPage() {
 
   const summary = summarizeSessions(sessions);
 
-  function handleExport() {
+  function handleExportCalibration() {
     downloadCalibrationJSON(sessions);
+  }
+
+  function handleExportFull() {
+    downloadFullSessionsJSON(sessions);
   }
 
   function handleClear() {
@@ -86,10 +93,17 @@ export default function SessionsPage() {
         <section className="flex flex-wrap gap-2">
           <button
             type="button"
-            onClick={handleExport}
+            onClick={handleExportCalibration}
             className="rounded-md bg-zinc-900 px-4 py-2 text-sm text-zinc-50 transition-colors hover:bg-zinc-700 dark:bg-zinc-50 dark:text-zinc-950 dark:hover:bg-zinc-300"
           >
-            Calibration JSON 내보내기
+            Calibration JSON
+          </button>
+          <button
+            type="button"
+            onClick={handleExportFull}
+            className="rounded-md border border-zinc-300 px-4 py-2 text-sm text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900"
+          >
+            전체 세션 + 평가 export
           </button>
           <button
             type="button"

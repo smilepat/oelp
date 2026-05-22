@@ -25,20 +25,41 @@ export function exportSessionsForCalibration(
 }
 
 /**
- * Trigger a browser download for the calibration JSON.
- * No-op in non-browser environments (returns null).
+ * Trigger a browser download for the calibration JSON (W6 calibrate.mjs format).
+ * Strips evaluation, dimensionScores-only per-card structure.
  */
 export function downloadCalibrationJSON(
   sessions: SessionRecord[],
   filename?: string
 ): string | null {
-  if (typeof document === "undefined" || typeof URL === "undefined") return null;
   const data = exportSessionsForCalibration(sessions);
+  return triggerDownload(
+    data,
+    filename ?? `oelp-sessions-${new Date().toISOString().slice(0, 10)}.json`
+  );
+}
+
+/**
+ * Trigger a browser download for the full SessionRecord[] (includes evaluations
+ * + per-card responses + metadata). Used for sharing complete dogfooding data.
+ */
+export function downloadFullSessionsJSON(
+  sessions: SessionRecord[],
+  filename?: string
+): string | null {
+  return triggerDownload(
+    sessions,
+    filename ?? `oelp-sessions-full-${new Date().toISOString().slice(0, 10)}.json`
+  );
+}
+
+function triggerDownload(data: unknown, filename: string): string | null {
+  if (typeof document === "undefined" || typeof URL === "undefined") return null;
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = filename ?? `oelp-sessions-${new Date().toISOString().slice(0, 10)}.json`;
+  a.download = filename;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
