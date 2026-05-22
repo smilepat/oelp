@@ -21,31 +21,32 @@
  *   - 0 domain contradictions
  */
 
-// Inlined from lib/ontology.ts to avoid TS loader requirement.
-// Source of truth: lib/ontology.ts (which is itself sourced from
-// csat-graphdb-318/src/domains/csat/graph/csat-schema.ts).
+// Source of truth: lib/ontology-weights.json (single source for calibration pipeline).
+// QT metadata (name, keyVariables) is duplicated here to keep the script self-contained.
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const WEIGHTS_JSON = JSON.parse(
+  readFileSync(join(__dirname, "..", "lib", "ontology-weights.json"), "utf-8")
+);
+const WEIGHTS = WEIGHTS_JSON.weights;
+function w(id) {
+  if (!WEIGHTS[id]) throw new Error(`ontology-weights.json missing ${id}`);
+  return WEIGHTS[id];
+}
+
 const QUESTION_TYPES = [
-  // v2 (2026-05-22 calibration after C4.1 v1 FAIL)
-  { id: "TYPE-목적", name: "목적 파악", keyVariables: ["purpose_indirectness", "text_type_variation"],
-    weights: { D1_Form: 0.05, D2_Meaning: 0.1, D3_Context: 0.5, D4_Network: 0.1, D5_Usage: 0.25 } },
-  { id: "TYPE-심경", name: "심경·분위기", keyVariables: ["emotional_indirectness", "emotion_vocab_density"],
-    weights: { D1_Form: 0.05, D2_Meaning: 0.35, D3_Context: 0.4, D4_Network: 0.1, D5_Usage: 0.1 } },
-  { id: "TYPE-주장", name: "필자 주장", keyVariables: ["claim_explicitness", "argument_structure"],
-    weights: { D1_Form: 0.05, D2_Meaning: 0.1, D3_Context: 0.55, D4_Network: 0.1, D5_Usage: 0.2 } },
-  { id: "TYPE-요지", name: "요지 파악", keyVariables: ["topic_abstractness", "topic_sentence_position"],
-    weights: { D1_Form: 0.05, D2_Meaning: 0.1, D3_Context: 0.5, D4_Network: 0.25, D5_Usage: 0.1 } },
-  { id: "TYPE-주제", name: "주제 파악", keyVariables: ["topic_abstractness", "topic_sentence_position", "advanced_vocab"],
-    weights: { D1_Form: 0.05, D2_Meaning: 0.25, D3_Context: 0.45, D4_Network: 0.2, D5_Usage: 0.05 } },
-  { id: "TYPE-제목", name: "제목 추론", keyVariables: ["title_abstractness", "metaphor_density"],
-    weights: { D1_Form: 0.05, D2_Meaning: 0.1, D3_Context: 0.35, D4_Network: 0.4, D5_Usage: 0.1 } },
-  { id: "TYPE-빈칸추론", name: "빈칸 추론", keyVariables: ["coherence_gap", "abstractness", "context_clue", "advanced_vocab"],
-    weights: { D1_Form: 0.05, D2_Meaning: 0.2, D3_Context: 0.45, D4_Network: 0.2, D5_Usage: 0.1 } },
-  { id: "TYPE-흐름무관", name: "흐름무관 문장", keyVariables: ["coherence_disruption", "topic_consistency"],
-    weights: { D1_Form: 0.05, D2_Meaning: 0.15, D3_Context: 0.55, D4_Network: 0.1, D5_Usage: 0.15 } },
-  { id: "TYPE-순서배열", name: "순서 배열", keyVariables: ["paragraph_dependency", "discourse_marker_density", "discourse_structure"],
-    weights: { D1_Form: 0.05, D2_Meaning: 0.1, D3_Context: 0.45, D4_Network: 0.1, D5_Usage: 0.3 } },
-  { id: "TYPE-문장삽입", name: "문장 삽입", keyVariables: ["coherence_disruption", "connective_density", "given_sentence_role"],
-    weights: { D1_Form: 0.05, D2_Meaning: 0.15, D3_Context: 0.45, D4_Network: 0.1, D5_Usage: 0.25 } },
+  { id: "TYPE-목적", name: "목적 파악", keyVariables: ["purpose_indirectness", "text_type_variation"], weights: w("TYPE-목적") },
+  { id: "TYPE-심경", name: "심경·분위기", keyVariables: ["emotional_indirectness", "emotion_vocab_density"], weights: w("TYPE-심경") },
+  { id: "TYPE-주장", name: "필자 주장", keyVariables: ["claim_explicitness", "argument_structure"], weights: w("TYPE-주장") },
+  { id: "TYPE-요지", name: "요지 파악", keyVariables: ["topic_abstractness", "topic_sentence_position"], weights: w("TYPE-요지") },
+  { id: "TYPE-주제", name: "주제 파악", keyVariables: ["topic_abstractness", "topic_sentence_position", "advanced_vocab"], weights: w("TYPE-주제") },
+  { id: "TYPE-제목", name: "제목 추론", keyVariables: ["title_abstractness", "metaphor_density"], weights: w("TYPE-제목") },
+  { id: "TYPE-빈칸추론", name: "빈칸 추론", keyVariables: ["coherence_gap", "abstractness", "context_clue", "advanced_vocab"], weights: w("TYPE-빈칸추론") },
+  { id: "TYPE-흐름무관", name: "흐름무관 문장", keyVariables: ["coherence_disruption", "topic_consistency"], weights: w("TYPE-흐름무관") },
+  { id: "TYPE-순서배열", name: "순서 배열", keyVariables: ["paragraph_dependency", "discourse_marker_density", "discourse_structure"], weights: w("TYPE-순서배열") },
+  { id: "TYPE-문장삽입", name: "문장 삽입", keyVariables: ["coherence_disruption", "connective_density", "given_sentence_role"], weights: w("TYPE-문장삽입") },
 ];
 
 // ─── 1. Semantic mapping: keyVariable → dimension contributions ──────

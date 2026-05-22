@@ -1,0 +1,105 @@
+name: Weekly Calibration (P-1 W6)
+
+# Phase 2 P-1 W6: weekly batch calibration with C4.1 regression gate.
+#
+# Pipeline (runs Sunday 02:00 UTC):
+#   1. Fetch accumulated responses from Supabase events
+#   2. Run scripts/calibrate.mjs --apply
+#   3. promote-weights.mjs auto-runs C4.1 regression
+#   4. If PASS → open PR with updated lib/ontology-weights.json
+#   5. If FAIL → workflow fails (manual review required)
+#
+# Required GitHub secrets (set on repo Settings → Secrets):
+#   - SUPABASE_URL              (public, but kept in secrets for convention)
+#   - SUPABASE_SERVICE_ROLE_KEY (server-side fetch of events table)
+#
+# Manual trigger: workflow_dispatch with optional --dry-run input.
+
+on:
+  schedule:
+    - cron: "0 2 * * 0"  # Sunday 02:00 UTC
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry-run only (no PR)"
+        required: false
+        default: "false"
+      min_responses:
+        description: "Minimum total responses required to proceed"
+        required: false
+        default: "300"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  calibrate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install deps (npm)
+        run: npm ci
+
+      - name: Sync responses from Supabase
+        id: sync
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          mkdir -p data
+          node scripts/sync-responses-from-supabase.mjs --out data/responses.json
+          echo "count=$(node -e 'console.log(JSON.parse(require("fs").readFileSync("data/responses.json","utf-8")).length)')" >> "$GITHUB_OUTPUT"
+
+      - name: Skip if below threshold
+        if: ${{ fromJson(steps.sync.outputs.count) < github.event.inputs.min_responses && github.event_name == 'workflow_dispatch' }}
+        run: |
+          echo "::notice::Only ${{ steps.sync.outputs.count }} responses available (threshold ${{ github.event.inputs.min_responses }}). Skipping."
+          exit 0
+
+      - name: Run calibrate + promote-weights (C4.1 regression gate)
+        if: ${{ github.event.inputs.dry_run != 'true' }}
+        run: node scripts/calibrate.mjs --responses data/responses.json --apply --reason "Weekly auto-calibration ${{ github.run_id }}"
+
+      - name: Dry-run calibrate only
+        if: ${{ github.event.inputs.dry_run == 'true' }}
+        run: node scripts/calibrate.mjs --responses data/responses.json --out out/calibration-dry.json
+
+      - name: Open PR for promoted weights
+        if: ${{ success() && github.event.inputs.dry_run != 'true' }}
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: "chore(calibration): weekly auto-update (run ${{ github.run_id }})"
+          title: "Weekly calibration: ${{ github.run_id }}"
+          body: |
+            Automated weekly calibration run.
+
+            **Pipeline**:
+            1. Synced ${{ steps.sync.outputs.count }} responses from Supabase events
+            2. Ran `calibrate.mjs --apply`
+            3. `promote-weights.mjs` C4.1 regression gate **PASSED**
+
+            See `out/promote-weights-success.json` for details.
+
+            **Review checklist**:
+            - [ ] Verify divergence values look reasonable (not extreme)
+            - [ ] Spot-check 1-2 QT changes against domain knowledge
+            - [ ] Confirm vocab-cat-test integration unchanged
+          branch: calibration/auto-${{ github.run_id }}
+          delete-branch: true
+
+      - name: Upload failure artifact
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: calibration-failure
+          path: |
+            out/promote-weights-fail.json
+            out/calibration-latest.json

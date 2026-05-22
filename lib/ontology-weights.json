@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "version": "v2-2026-05-22",
+  "calibrationHistory": [
+    {
+      "version": "v1-2026-05-22",
+      "trigger": "initial heuristic",
+      "result": "C4.1 v1 FAIL (tau 0.4, 5 contradictions)"
+    },
+    {
+      "version": "v2-2026-05-22",
+      "trigger": "C4.1 v1 calibration cycle",
+      "result": "C4.1 v2 PASS (tau 0.6, 0 contradictions)",
+      "changedQTs": ["TYPE-목적", "TYPE-심경", "TYPE-주장", "TYPE-요지", "TYPE-제목"]
+    }
+  ],
+  "weights": {
+    "TYPE-목적":   { "D1_Form": 0.05, "D2_Meaning": 0.10, "D3_Context": 0.50, "D4_Network": 0.10, "D5_Usage": 0.25 },
+    "TYPE-심경":   { "D1_Form": 0.05, "D2_Meaning": 0.35, "D3_Context": 0.40, "D4_Network": 0.10, "D5_Usage": 0.10 },
+    "TYPE-주장":   { "D1_Form": 0.05, "D2_Meaning": 0.10, "D3_Context": 0.55, "D4_Network": 0.10, "D5_Usage": 0.20 },
+    "TYPE-요지":   { "D1_Form": 0.05, "D2_Meaning": 0.10, "D3_Context": 0.50, "D4_Network": 0.25, "D5_Usage": 0.10 },
+    "TYPE-주제":   { "D1_Form": 0.05, "D2_Meaning": 0.25, "D3_Context": 0.45, "D4_Network": 0.20, "D5_Usage": 0.05 },
+    "TYPE-제목":   { "D1_Form": 0.05, "D2_Meaning": 0.10, "D3_Context": 0.35, "D4_Network": 0.40, "D5_Usage": 0.10 },
+    "TYPE-빈칸추론": { "D1_Form": 0.05, "D2_Meaning": 0.20, "D3_Context": 0.45, "D4_Network": 0.20, "D5_Usage": 0.10 },
+    "TYPE-흐름무관": { "D1_Form": 0.05, "D2_Meaning": 0.15, "D3_Context": 0.55, "D4_Network": 0.10, "D5_Usage": 0.15 },
+    "TYPE-순서배열": { "D1_Form": 0.05, "D2_Meaning": 0.10, "D3_Context": 0.45, "D4_Network": 0.10, "D5_Usage": 0.30 },
+    "TYPE-문장삽입": { "D1_Form": 0.05, "D2_Meaning": 0.15, "D3_Context": 0.45, "D4_Network": 0.10, "D5_Usage": 0.25 }
+  }
+}

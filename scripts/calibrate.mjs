@@ -20,7 +20,8 @@
  * Phase 2 W6: GitHub Actions cron pulls Supabase events → runs this → auto-PR.
  */
 
-import { readFileSync, writeFileSync, existsSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
+import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
@@ -211,15 +212,22 @@ for (const qtId of QT_IDS) {
   console.log(`${qtId}: ${diff}`);
 }
 
-if (args.out) {
-  writeFileSync(join(ROOT, args.out), JSON.stringify(result, null, 2));
-  console.log(`\nWrote: ${args.out}`);
-}
+// Persist calibration result — required for --apply chain
+const outPath = args.out || "out/calibration-latest.json";
+const outAbs = join(ROOT, outPath);
+import("node:fs").then(({ writeFileSync: wfs, existsSync: efs, mkdirSync: mds }) => {
+  if (!efs(join(ROOT, "out"))) mds(join(ROOT, "out"));
+  wfs(outAbs, JSON.stringify(result, null, 2));
+  console.log(`\nWrote: ${outPath}`);
 
-if (args.apply) {
-  console.error("\n⚠️  --apply not yet wired. Run C4.1 regression manually before promoting weights:");
-  console.error("   1. Update lib/ontology.ts weights from this output");
-  console.error("   2. node scripts/synthetic-validation-c4-1.mjs > out/c4-1-check.md");
-  console.error("   3. Verify Kendall tau ≥ 0.4 + 0 contradictions");
-  console.error("   4. If regression PASS, commit; if FAIL, revert");
-}
+  if (args.apply) {
+    console.log("\n=== --apply: invoking promote-weights with C4.1 regression gate ===");
+    const reason = args.reason || `calibrate.mjs --apply ${new Date().toISOString()}`;
+    const child = spawnSync(
+      process.execPath,
+      [join(ROOT, "scripts", "promote-weights.mjs"), "--calibration", outPath, "--reason", reason],
+      { cwd: ROOT, stdio: "inherit" }
+    );
+    process.exit(child.status ?? 0);
+  }
+});
