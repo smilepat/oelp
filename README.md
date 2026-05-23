@@ -109,7 +109,7 @@ node scripts/calibrate.mjs --responses data/dogfood.json --min 100 --lambda 1.0 
 
 ---
 
-## 4. Scripts (14)
+## 4. Scripts (15)
 
 | 스크립트 | 역할 |
 |---|---|
