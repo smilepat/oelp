@@ -63,9 +63,27 @@ jobs:
       - name: Next.js build
         run: npm run build
 
+      - name: Install Playwright browsers (cached)
+        run: npx playwright install --with-deps chromium
+
+      - name: A11y e2e (axe-core, 6 routes × 2 viewports = 12)
+        env:
+          CI: "true"
+        run: npx playwright test
+        # webServer block in playwright.config.ts auto-starts `next start` on CI
+
       - name: Upload C4 reports
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:
           name: c4-pr-reports
           path: out/c4-*-pr-check.md
+
+      - name: Upload Playwright trace on failure
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            test-results/
+            playwright-report/

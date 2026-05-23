@@ -23,7 +23,8 @@ export default defineConfig({
   ],
   webServer: process.env.CI
     ? {
-        command: "npm run build && npx next start -p 3001",
+        // pr-check.yml runs `npm run build` before this step, so just start.
+        command: "npx next start -p 3001",
         url: "http://localhost:3001",
         reuseExistingServer: false,
         timeout: 120_000,
