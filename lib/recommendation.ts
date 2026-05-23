@@ -240,12 +240,32 @@ export interface ExplorationCandidate {
  * preventing cold-start starvation when N is high but uneven.
  *
  * Returns null if all QTs have >= maxSamplesToConsider samples (well-explored).
+ *
+ * `adaptive` option (default false — kept off until external learner N ≥ 200):
+ *   when true, maxSamplesToConsider is computed dynamically as
+ *   `max(fixed, meanSamples × ratio)` so the threshold scales with mean.
+ *   Addresses R5 long-run finding (smilepat/myprojects
+ *   docs/03-analysis/exploration-policy-long-run-analysis.md) where fixed
+ *   cap=20 caused balance regression at N>200.
  */
 export function findExplorationTarget(
   posteriors: Record<string, BetaPosterior>,
-  opts: { maxSamplesToConsider?: number; excludeQtIds?: readonly string[] } = {}
+  opts: {
+    maxSamplesToConsider?: number;
+    excludeQtIds?: readonly string[];
+    adaptive?: boolean;
+    adaptiveRatio?: number;
+  } = {}
 ): ExplorationCandidate | null {
-  const maxSamples = opts.maxSamplesToConsider ?? 20;
+  const fixed = opts.maxSamplesToConsider ?? 20;
+  let maxSamples = fixed;
+  if (opts.adaptive) {
+    const ratio = opts.adaptiveRatio ?? 0.3;
+    const meanSamples =
+      Object.values(posteriors).reduce((s, p) => s + p.samples, 0) /
+      Math.max(Object.keys(posteriors).length, 1);
+    maxSamples = Math.max(fixed, meanSamples * ratio);
+  }
   const exclude = new Set(opts.excludeQtIds ?? []);
 
   let best: ExplorationCandidate | null = null;

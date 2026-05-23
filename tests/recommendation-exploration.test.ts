@@ -142,6 +142,55 @@ describe("posteriorBalance (P-1 prep)", () => {
   });
 });
 
+describe("findExplorationTarget — adaptive threshold (R5)", () => {
+  test("T1: adaptive=false (default) → fixed cap 20 behavior unchanged", () => {
+    const samples: Record<string, number> = {};
+    for (const qt of QUESTION_TYPES) samples[qt.id] = 50;
+    // 9 QT at 50 samples, 1 at 5 samples
+    samples["TYPE-제목"] = 5;
+    // Without adaptive, 50 > 20 → all "well-explored" except 제목
+    const result = findExplorationTarget(mkMap(samples));
+    expect(result?.questionType.id).toBe("TYPE-제목");
+  });
+
+  test("T2: adaptive=true scales threshold with mean", () => {
+    // 9 QT at 400 samples (mean ≈ 360), 1 at 20
+    const samples: Record<string, number> = {};
+    for (const qt of QUESTION_TYPES) samples[qt.id] = 400;
+    samples["TYPE-제목"] = 20;
+    // Without adaptive, 20 == fixed cap → null
+    expect(findExplorationTarget(mkMap(samples))).toBeNull();
+    // With adaptive (mean × 0.3 ≈ 108), 20 < 108 → still explored
+    const adaptive = findExplorationTarget(mkMap(samples), { adaptive: true });
+    expect(adaptive?.questionType.id).toBe("TYPE-제목");
+    expect(adaptive?.samples).toBe(20);
+  });
+
+  test("T3: adaptiveRatio option respected", () => {
+    const samples: Record<string, number> = {};
+    for (const qt of QUESTION_TYPES) samples[qt.id] = 100;
+    samples["TYPE-제목"] = 25;
+    // adaptive with ratio 0.5 → threshold = max(20, 100*0.5) = 50 → 25 explored
+    expect(
+      findExplorationTarget(mkMap(samples), { adaptive: true, adaptiveRatio: 0.5 })
+        ?.questionType.id
+    ).toBe("TYPE-제목");
+    // adaptive with ratio 0.1 → threshold = max(20, 10) = 20 → 25 too high
+    expect(
+      findExplorationTarget(mkMap(samples), { adaptive: true, adaptiveRatio: 0.1 })
+    ).toBeNull();
+  });
+
+  test("T4: adaptive never below fixed (low N protection)", () => {
+    // mean = 5, ratio 0.3 → 1.5. Fixed = 20. Effective threshold = 20.
+    const samples: Record<string, number> = {};
+    for (const qt of QUESTION_TYPES) samples[qt.id] = 5;
+    // All at 5 < 20 → all candidates. adaptive shouldn't lower the cap.
+    const result = findExplorationTarget(mkMap(samples), { adaptive: true });
+    expect(result).not.toBeNull();
+  });
+});
+
 describe("shouldExplore (adaptive frequency)", () => {
   test("T1: severe starvation (balance < 0.1) → every 2nd session", () => {
     expect(shouldExplore(0.05, 1)).toBe(false);
