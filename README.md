@@ -101,22 +101,32 @@ node scripts/calibrate.mjs --responses data/dogfood.json --min 100 --lambda 1.0 
 | `lib/content-generator.ts` | ContentGenerator interface + Local/EBS impls + Chain (P-2) |
 | `lib/content-validators.ts` | **12 validators** (P-2 W1-W2 V1-V9, W6 V10-V12) |
 | `lib/irt-cold-start.ts` | Rasch Newton-Raphson + Fisher SE (P-2 W5) |
+| `lib/diagnostic-presets.ts` | 4 preset diagnostics α/β/γ/δ (P-1.5b UX) |
+| `lib/regression-history.ts` + `.json` | C4.1 게이트 이벤트 audit log (T1.1) |
+| `lib/vocab-pool-source.json` | CSV provenance SHA-256 + row count (T3.1) |
+| `lib/error-log.ts` | localStorage 기반 client error log (A3) |
+| `lib/trend-analysis.ts` | C4.3 trend-analysis (computeWindows + analyzeTrend, scaffolded) |
 
 ---
 
-## 4. Scripts (13)
+## 4. Scripts (14)
 
 | 스크립트 | 역할 |
 |---|---|
 | `synthetic-validation-c4-1.mjs` | C4.1 회귀 (Kendall tau + 도메인 모순) |
 | `c4-2-diversity.mjs` | C4.2 큐 다양성 (Jaccard 측정) |
 | `c1-3-roundtrip.mjs` | C1.3 DiagnosticInput round-trip |
-| `build-vocab-pool.mjs` | vocabulary-db CSV → vocabulary-pool.ts (auto-gen) |
+| `build-vocab-pool.mjs` | vocabulary-db CSV → vocabulary-pool.ts (auto-gen + SHA-256 provenance) |
 | `gen-fake-responses.mjs` | 개발자 검증용 합성 응답 |
 | `simulate-varied-dogfooding.mjs` | 다양한 진단 시뮬레이션 (P-1.5b) |
-| `calibrate.mjs` | Ridge regression CLI (--apply chains to promote) |
-| `promote-weights.mjs` | C4.1 회귀 게이트 + 자동 롤백 |
+| `calibrate.mjs` | Ridge regression CLI (`--auto-lambda` N-dependent schedule) |
+| `promote-weights.mjs` | C4.1 회귀 게이트 + 자동 롤백 + regression-history auto-append |
 | `sync-responses-from-supabase.mjs` | events → responses (degraded mode 지원) |
+| `validate-schemas.mjs` | 3 JSON 파일 AJV schema 검증 (T1.1) |
+| `update-readme-counters.mjs` | README 카운터 자동 동기화 (T2.1) |
+| `verify-vocab-cat-test.mjs` | vocab-cat-test multi-step CAT 흐름 검증 + 5D 매핑 |
+| `dogfood-3-presets.mjs` | preset 기반 dogfooding 시뮬레이터 (seed-based, reproducible) |
+| `dogfood-stage-c-sim.mjs` | Stage C 활성화 forecasting (외부 학습자 1명 mix) |
 
 ---
 
@@ -178,39 +188,59 @@ node scripts/calibrate.mjs --responses data/dogfood.json --min 100 --lambda 1.0 
 
 ---
 
-## 9. 진행 상황 종합 (2026-05-23 기준)
+## 9. 진행 상황 종합 (2026-05-23 v3 sprint 종료)
 
 | Phase | 진행 |
 |---|---|
-| Phase 1 자동 검증 | 11/12 PASS (96%) |
-| Phase 1 본인 정성 | 1/2 (C2.1 대기) |
+| Phase 1 자동 검증 | **12/12 measured PASS** (C1.1 177 pytest + C1.2 theta variance 0.03) |
+| Phase 1 본인 정성 | 1/2 (C2.1 잔여 — 자율 가능) |
 | P-1 Recommendation v2 | 100% (8 weeks) |
 | P-1.5 Bridge | 100% (1 week) |
-| P-1.5b Varied Diagnostic | 100% |
+| P-1.5b Varied Diagnostic + preset UI | 100% |
 | P-2 EBS Content Foundation | 100% (6 weeks) |
-| dogfooding-1 | 30 응답, 90% 정답률, C4.1 gate 발동 확인 (D2 over-declared) |
-| dogfooding-2 | real 30 + sim 1200 결합, C4.1 gate 재발동 (D3 under-declared, 자동 롤백) |
-| **vocab-cat-test 통합** | ✅ 완료 (Python venv 우회) — pytest 177 pass, theta variance 0.03 → **C1.2 measured PASS** |
+| **P-2 W7 EBS real wiring** | 100% (코드 완료, Firebase config 본인 잔여) |
+| **Tier 1-3 Stability Roadmap** | 100% (7 작업 — schemas, write-protect, auto-sync, dependabot) |
+| **Tier 4.1 A11y baseline** | 100% (12/12 WCAG 2.1 AA — desktop + mobile) |
+| **vocab-cat-test 통합** | ✅ resolved (177 pytest, θ variance 0.03 → C1.2 measured PASS) |
+| **Vercel Production 배포** | ✅ 본인 완료 |
+| dogfooding-1 | 30 응답 → C4.1 D2 over → rollback |
+| dogfooding-2 | 1230 응답 → C4.1 D3 under → rollback |
+| dogfooding-3 (preset 시뮬레이션) | 1600 응답 → C4.1 D5 over → rollback |
+| **λ schedule (auto-lambda)** | N-dependent (N<100→2.0, ..., >10k→0.5) |
+| **C4.3 trend infra** | scaffolded (10 unit tests, UI 통합 대기) |
+| **Stage C 활성화 forecasting** | 외부 1명만으론 게이트 FAIL 지속, 50% 비율 시 PASS 가능성 forecast |
 
-상세: [`docs/04-report/oelp-integrated-summary.md`](https://github.com/smilepat/myprojects/blob/main/docs/04-report/oelp-integrated-summary.md)
+상세:
+- 통합 회고: [`docs/04-report/oelp-integrated-summary.md`](https://github.com/smilepat/myprojects/blob/main/docs/04-report/oelp-integrated-summary.md) v3
+- Stability sprint: [`docs/04-report/stability-roadmap-tier-1-3-complete.md`](https://github.com/smilepat/myprojects/blob/main/docs/04-report/stability-roadmap-tier-1-3-complete.md)
+- Phase 2 PRD: [`docs/01-plan/prd-oelp-mvp-phase2.md`](https://github.com/smilepat/myprojects/blob/main/docs/01-plan/prd-oelp-mvp-phase2.md)
+- C4.1 게이트 3 cycle: [`docs/03-analysis/dogfooding-pass-{1,2,3}.md`](https://github.com/smilepat/myprojects/tree/main/docs/03-analysis)
 
 ---
 
-## 10. 다음 백로그
+## 10. Phase 2 백로그 (v2 — Stage A/B/C/D)
 
-### 즉시 자율 가능
-- Phase 2 P-7 Neo4j Spike (4주)
-- 본인 dogfooding-2 (varied diagnostic 사용)
-- OELP UI polish (A11y, dark mode, mobile)
+### Stage A — Claude 자율 가능 (즉시)
+- C4.3 trend UI 통합 (lib/trend-analysis.ts 준비됨)
+- A8 `/diagnose` vocab-cat-test 통계 위젯
+- regression-history 검색/필터 (events 8건+ 누적 후)
+- error-log mock test 추가로 coverage → 100%
 
-### 본인 환경 의존
-- vocab-cat-test Docker 통합 → C1.2 의미 stability 평가
-- EBS-demo Firebase config → EBSCriteriaEngineGenerator 활성화
+### Stage B — 본인 1-2시간 결단
+- ☐ Cloud Run vocab-cat-test 배포 ([runbook](https://github.com/smilepat/myprojects/blob/main/docs/03-analysis/vocab-cat-test-cloudrun-runbook.md))
+- ☐ EBS-demo Firebase config (코드는 wired)
+- ☐ vocab-cat-test PR #2 merge (CORS 1줄, pending)
 
-### 학습자 채널 의존
-- Phase 2 P-3 Phonics (새 페르소나 P1)
-- Phase 2 P-5 Teacher Dashboard
-- C4.3 trend 4주 학습 데이터
+### Stage C — 학습자 채널 의존 (현재 0명 → ≥1명 활성화)
+- P-3 Phonics 페르소나 P1 정의 + reading-roadmap 재활성화 (6주)
+- P-5 Teacher Dashboard 페르소나 P2 + B2B (8주)
+- P-1 W9+ Recommendation refinement (외부 학습자 ridge calibration, 4주)
+- 첫 자기-개선 calibration cycle (Stage C sim forecast: 외부 ≥ 50% 비율)
+
+### Stage D — 재평가 트리거 후 (Phase 3 후보)
+- P-7 Neo4j re-evaluation (학습자 ≥ 1000 또는 multi-hop 명시 요구 시)
+- P-4 React Native hybrid mobile
+- P-6 AI Tutor conversational
 
 ---
 
@@ -235,3 +265,13 @@ node scripts/calibrate.mjs --responses data/dogfood.json --min 100 --lambda 1.0 
 - 2026-05-23: P-1.5b varied diagnostic + simulator 검증
 - 2026-05-23: P-2 W1-W6 (content-generator + 12 validators + buildQueueV3 + IRT cold-start)
 - 2026-05-23: **dogfooding-2 (real 30 + sim 1200) → C4.1 게이트 D3 under-declared 모순 검출 → 자동 롤백**
+- 2026-05-23 v2 sprint: **Tier 1-3 stability roadmap** (7 작업) — JSON schemas + write-protection + auto-doc sync + Dependabot
+- 2026-05-23 v2 sprint: **Tier 4.1 A11y** baseline (axe-core 6 routes × 2 viewports = 12 WCAG 2.1 AA PASS)
+- 2026-05-23 v2 sprint: **vocab-cat-test 실제 통합** (Python venv 경로) + PR #1 fix merged + AdaptiveDiagnostic UI + weekly cron CI
+- 2026-05-23 v2 sprint: **Vercel Production 배포** (본인 완료) + Cloud Run runbook 준비
+- 2026-05-23 v2 sprint: EBSCriteriaEngineGenerator stub → 실 wiring (Firebase config 본인 잔여)
+- 2026-05-23 v2 sprint: A4 mobile 반응형 + A3 error boundary + A6 coverage gate (95.51%) + A5 /sessions 운영 패널 + A7 leitner/session-export 0%→100%
+- 2026-05-23 v3 sprint: **dogfooding-3 preset 시뮬레이션** (1600 응답) → C4.1 D5 over-declared → 롤백 (3 cycle 누적)
+- 2026-05-23 v3 sprint: **λ schedule (auto-lambda)** N-dependent + C4.3 trend-analysis 인프라 (scaffolded)
+- 2026-05-23 v3 sprint: **Stage C 활성화 forecasting** (외부 1명 simulation) + Phase 2 PRD 정식화
+- 2026-05-23 v3 sprint: OELP + myprojects **CLAUDE.md** 정비 (작업 컨티뉴이티 기반)
