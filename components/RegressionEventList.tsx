@@ -3,6 +3,27 @@
 import { useMemo, useState } from "react";
 import type { RegressionEvent } from "@/lib/regression-history";
 
+function downloadEvents(events: RegressionEvent[]) {
+  if (typeof document === "undefined" || typeof URL === "undefined") return;
+  const payload = {
+    exportedAt: new Date().toISOString(),
+    source: "smilepat/oelp lib/regression-history.json",
+    count: events.length,
+    events,
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {
+    type: "application/json",
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `oelp-regression-history-${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
 interface Props {
   events: RegressionEvent[];
 }
@@ -73,7 +94,7 @@ export function RegressionEventList({ events }: Props) {
     <>
       <section className="flex flex-col gap-3 rounded-md border border-zinc-200 p-4 dark:border-zinc-800">
         <header className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
-          <p className="text-xs uppercase tracking-wider text-zinc-500">Filters</p>
+          <p className="text-xs uppercase tracking-wider text-zinc-500">Filters · Export</p>
           <p className="text-[10px] text-zinc-500">
             {filtered.length} / {events.length} events 표시
           </p>
@@ -121,6 +142,27 @@ export function RegressionEventList({ events }: Props) {
               초기화
             </button>
           )}
+        </div>
+        <div className="flex flex-wrap gap-2 border-t border-zinc-100 pt-2 dark:border-zinc-900">
+          <button
+            type="button"
+            onClick={() => downloadEvents(filtered)}
+            className="rounded-md border border-zinc-300 px-3 py-1.5 text-xs text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900"
+            title="현재 필터 결과만 JSON으로 다운로드"
+          >
+            JSON 다운로드 ({filtered.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => downloadEvents(events)}
+            className="rounded-md border border-zinc-300 px-3 py-1.5 text-xs text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900"
+            title="필터 무시, 전체 이벤트 다운로드"
+          >
+            전체 다운로드 ({events.length})
+          </button>
+          <span className="text-[10px] text-zinc-500 self-center">
+            audit 외부 공유 / 백업용. localStorage 영향 없음.
+          </span>
         </div>
       </section>
 
