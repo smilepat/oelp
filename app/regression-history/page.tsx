@@ -1,37 +1,13 @@
 import {
   getRegressionEvents,
   countByResult,
-  type RegressionEvent,
 } from "@/lib/regression-history";
+import { RegressionEventList } from "@/components/RegressionEventList";
 
 export const metadata = {
   title: "Regression History — OELP",
   description: "C4.1 게이트 통과·롤백 이력 (auditable)",
 };
-
-function ResultBadge({ result }: { result: RegressionEvent["result"] }) {
-  if (result === "pass") {
-    return (
-      <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200">
-        ✓ PASS
-      </span>
-    );
-  }
-  return (
-    <span className="inline-flex items-center rounded-full bg-rose-100 px-2 py-0.5 text-xs font-medium text-rose-800 dark:bg-rose-950 dark:text-rose-200">
-      ✗ FAIL · rollback
-    </span>
-  );
-}
-
-function KindLabel({ kind }: { kind: RegressionEvent["kind"] }) {
-  const map: Record<RegressionEvent["kind"], string> = {
-    "initial": "초기 휴리스틱",
-    "manual-calibration": "수동 calibration",
-    "auto-promote": "auto-promote (calibrate.mjs)",
-  };
-  return <span className="text-xs text-zinc-500">{map[kind]}</span>;
-}
 
 export default function RegressionHistoryPage() {
   const events = getRegressionEvents();
@@ -80,98 +56,7 @@ export default function RegressionHistoryPage() {
         </div>
       </section>
 
-      <section className="flex flex-col gap-4">
-        {events.map((e) => (
-          <article
-            key={e.id}
-            className={`flex flex-col gap-3 rounded-lg border p-5 ${
-              e.result === "pass"
-                ? "border-emerald-200 dark:border-emerald-900"
-                : "border-rose-200 dark:border-rose-900"
-            }`}
-          >
-            <header className="flex flex-wrap items-center justify-between gap-2">
-              <div className="flex items-center gap-3">
-                <ResultBadge result={e.result} />
-                <KindLabel kind={e.kind} />
-                {e.version && (
-                  <code className="rounded bg-zinc-100 px-1.5 py-0.5 text-xs text-zinc-700 dark:bg-zinc-900 dark:text-zinc-300">
-                    {e.version}
-                  </code>
-                )}
-              </div>
-              <time className="text-xs text-zinc-500" dateTime={e.occurredAt}>
-                {new Date(e.occurredAt).toLocaleString("ko-KR")}
-              </time>
-            </header>
-
-            <div className="grid grid-cols-2 gap-3 text-xs sm:grid-cols-4">
-              <div>
-                <p className="uppercase tracking-wider text-zinc-500">τ (Kendall)</p>
-                <p className="text-base font-medium text-zinc-950 dark:text-zinc-50">
-                  {e.tau.toFixed(2)}
-                </p>
-                <p className="text-zinc-500">gate: ≥ 0.40</p>
-              </div>
-              <div>
-                <p className="uppercase tracking-wider text-zinc-500">Contradictions</p>
-                <p className="text-base font-medium text-zinc-950 dark:text-zinc-50">
-                  {e.contradictions}
-                </p>
-                <p className="text-zinc-500">gate: ≤ 0</p>
-              </div>
-              <div className="col-span-2 sm:col-span-2">
-                <p className="uppercase tracking-wider text-zinc-500">Trigger</p>
-                <p className="leading-snug text-zinc-700 dark:text-zinc-300">{e.trigger}</p>
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-2 text-sm">
-              <p className="leading-6 text-zinc-800 dark:text-zinc-200">{e.summary}</p>
-              {(e.changedQTs || e.attemptedChanges) && (
-                <div className="flex flex-wrap gap-1.5 text-xs">
-                  <span className="text-zinc-500">
-                    {e.result === "pass" ? "Promoted QTs:" : "Attempted QTs:"}
-                  </span>
-                  {(e.changedQTs ?? e.attemptedChanges ?? []).map((qt) => (
-                    <code
-                      key={qt}
-                      className="rounded bg-zinc-100 px-1.5 py-0.5 text-zinc-700 dark:bg-zinc-900 dark:text-zinc-300"
-                    >
-                      {qt}
-                    </code>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <footer className="flex flex-col gap-1 border-t border-zinc-100 pt-3 text-xs dark:border-zinc-900">
-              <p className="text-zinc-600 dark:text-zinc-400">
-                <span className="font-medium text-zinc-700 dark:text-zinc-300">Lesson: </span>
-                {e.lesson}
-              </p>
-              {e.note && (
-                <p className="text-zinc-500">
-                  <span className="font-medium">Note: </span>
-                  {e.note}
-                </p>
-              )}
-              {e.reportPath && (
-                <p>
-                  <a
-                    href={`https://github.com/smilepat/myprojects/blob/main/${e.reportPath}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-zinc-600 underline hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
-                  >
-                    상세 보고서: {e.reportPath}
-                  </a>
-                </p>
-              )}
-            </footer>
-          </article>
-        ))}
-      </section>
+      <RegressionEventList events={events} />
 
       <footer className="rounded-md border border-zinc-200 bg-zinc-50 p-4 text-xs text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400">
         <p className="font-medium text-zinc-700 dark:text-zinc-300">
