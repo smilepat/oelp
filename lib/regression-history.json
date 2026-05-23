@@ -86,6 +86,26 @@
       "summary": "TYPE-순서배열 D3_Context 45%→3% 시도 → derived 33%인데 declared <5% → under-declared 모순",
       "lesson": "Pass-1 (over-declared)과 반대 종류의 모순도 동일 게이트가 검출 → 안전망의 일반성 입증",
       "reportPath": "docs/03-analysis/dogfooding-pass-2.md"
+    },
+    {
+      "id": "auto-2026-05-23-qdg6",
+      "occurredAt": "2026-05-23T08:15:49.562Z",
+      "kind": "auto-promote",
+      "result": "fail",
+      "version": "auto-2026-05-23-qdg6",
+      "previousVersion": "v2-2026-05-22",
+      "trigger": "dogfooding-3 preset-based simulation (4 presets × 10 learners × 4 sessions × 10 cards = 1600)",
+      "tau": 0.6,
+      "contradictions": 2,
+      "attemptedChanges": [
+        "TYPE-심경",
+        "TYPE-요지",
+        "TYPE-제목",
+        "TYPE-순서배열"
+      ],
+      "summary": "TYPE-심경 + TYPE-제목 D5_Usage 28%/27% 시도 → keyVariables D5에 0% 기여 → over-declared 모순 2건 검출",
+      "lesson": "Pass-1/2와 다른 차원 (D5) + 다른 방향 (over-declared) 모순도 동일 게이트가 catch → 안전망 3회 누적 입증. 1600 응답에서도 λ=1.0 prior pull이 noise 흡수 부족.",
+      "reportPath": "docs/03-analysis/dogfooding-pass-3.md"
     }
   ]
 }
