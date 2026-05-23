@@ -4,8 +4,81 @@ import { useMemo, useSyncExternalStore } from "react";
 import {
   posteriorBalance,
   findExplorationTarget,
+  type BetaPosterior,
 } from "@/lib/recommendation";
 import { QUESTION_TYPES } from "@/lib/ontology";
+
+/**
+ * Pure data transform — extracted so tests can exercise the panel logic
+ * without rendering React. Reads localStorage `oelp.posteriors.default`
+ * envelope and returns the panel's display state.
+ */
+export interface BalanceSummary {
+  posteriorMap: Record<string, BetaPosterior> | null;
+  balance: number;
+  minSamples: number;
+  maxSamples: number;
+  starvedQTs: string[];
+  explorationTargetName: string | null;
+  /** max/min > 10 → R5 long-run imbalance flag */
+  longRunImbalance: boolean;
+}
+
+export function computeBalanceSummary(raw: string | null): BalanceSummary {
+  if (!raw) {
+    return {
+      posteriorMap: null,
+      balance: 0,
+      minSamples: 0,
+      maxSamples: 0,
+      starvedQTs: [],
+      explorationTargetName: null,
+      longRunImbalance: false,
+    };
+  }
+  try {
+    const env = JSON.parse(raw);
+    if (env.schemaVersion !== 1) {
+      return {
+        posteriorMap: null,
+        balance: 0,
+        minSamples: 0,
+        maxSamples: 0,
+        starvedQTs: [],
+        explorationTargetName: null,
+        longRunImbalance: false,
+      };
+    }
+    const map: Record<string, BetaPosterior> = env.posteriors ?? {};
+    const allSamples = QUESTION_TYPES.map((qt) => map[qt.id]?.samples ?? 0);
+    const starved = QUESTION_TYPES.filter((qt) => (map[qt.id]?.samples ?? 0) === 0).map(
+      (qt) => qt.name
+    );
+    const exp = findExplorationTarget(map);
+    const minSamples = allSamples.length ? Math.min(...allSamples) : 0;
+    const maxSamples = allSamples.length ? Math.max(...allSamples) : 0;
+    return {
+      posteriorMap: map,
+      balance: posteriorBalance(map),
+      minSamples,
+      maxSamples,
+      starvedQTs: starved,
+      explorationTargetName: exp ? exp.questionType.name : null,
+      // R5 long-run flag: warm QTs 10× more than cold + cold non-zero
+      longRunImbalance: minSamples > 0 && maxSamples / Math.max(minSamples, 1) > 10,
+    };
+  } catch {
+    return {
+      posteriorMap: null,
+      balance: 0,
+      minSamples: 0,
+      maxSamples: 0,
+      starvedQTs: [],
+      explorationTargetName: null,
+      longRunImbalance: false,
+    };
+  }
+}
 
 const STORAGE_KEY = "oelp.posteriors.default";
 
@@ -34,55 +107,14 @@ function snapshot(): string | null {
 export function PosteriorBalancePanel() {
   const raw = useSyncExternalStore(subscribe, snapshot, () => null);
 
-  const { posteriorMap, balance, minSamples, maxSamples, starvedQTs, explorationTarget } = useMemo(() => {
-    if (!raw) {
-      return {
-        posteriorMap: null,
-        balance: 0,
-        minSamples: 0,
-        maxSamples: 0,
-        starvedQTs: [] as string[],
-        explorationTarget: null,
-      };
-    }
-    try {
-      const env = JSON.parse(raw);
-      if (env.schemaVersion !== 1) {
-        return {
-          posteriorMap: null,
-          balance: 0,
-          minSamples: 0,
-          maxSamples: 0,
-          starvedQTs: [],
-          explorationTarget: null,
-        };
-      }
-      const map = env.posteriors ?? {};
-      const bal = posteriorBalance(map);
-      const allSamples = QUESTION_TYPES.map((qt) => map[qt.id]?.samples ?? 0);
-      const starved = QUESTION_TYPES.filter((qt) => (map[qt.id]?.samples ?? 0) === 0).map(
-        (qt) => qt.name
-      );
-      const exp = findExplorationTarget(map);
-      return {
-        posteriorMap: map,
-        balance: bal,
-        minSamples: allSamples.length ? Math.min(...allSamples) : 0,
-        maxSamples: allSamples.length ? Math.max(...allSamples) : 0,
-        starvedQTs: starved,
-        explorationTarget: exp,
-      };
-    } catch {
-      return {
-        posteriorMap: null,
-        balance: 0,
-        minSamples: 0,
-        maxSamples: 0,
-        starvedQTs: [],
-        explorationTarget: null,
-      };
-    }
-  }, [raw]);
+  const summary = useMemo(() => computeBalanceSummary(raw), [raw]);
+  const { posteriorMap, balance, minSamples, maxSamples, starvedQTs, longRunImbalance } =
+    summary;
+  // Re-compute exploration target object for full display (info value etc)
+  const explorationTarget = useMemo(
+    () => (posteriorMap ? findExplorationTarget(posteriorMap) : null),
+    [posteriorMap]
+  );
 
   if (!posteriorMap) {
     return (
@@ -159,7 +191,7 @@ export function PosteriorBalancePanel() {
             {maxSamples > 0 ? (minSamples / maxSamples).toFixed(3) : "—"}
           </span>
         </span>
-        {minSamples > 0 && maxSamples / Math.max(minSamples, 1) > 10 && (
+        {longRunImbalance && (
           <span
             className="rounded bg-rose-100 px-1 text-rose-700 dark:bg-rose-950 dark:text-rose-300"
             title="warm QTs가 cold QTs보다 10배 이상 — adaptive threshold (R5 분석) 검토 시점"
