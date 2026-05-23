@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { DiagnosticInput, VocabDimension } from "@/lib/diagnostic";
+import { logEvent } from "@/lib/analytics-events";
 
 /**
  * AdaptiveDiagnostic — vocab-cat-test 백엔드와 multi-step CAT 흐름.
@@ -80,6 +81,10 @@ export function AdaptiveDiagnostic({ onComplete }: Props) {
   const [state, setState] = useState<State>({ kind: "idle" });
   const [grade, setGrade] = useState<typeof GRADES[number]>("고2");
   const [nickname, setNickname] = useState("");
+  // Session-scoped refs for analytics events
+  const startedAtRef = useRef<number>(0);
+  const itemStartRef = useRef<number>(0);
+  const itemCountRef = useRef<number>(0);
 
   if (!BACKEND_URL) {
     return (
@@ -103,6 +108,9 @@ NEXT_PUBLIC_VOCAB_CAT_TEST_URL=http://localhost:8000
 
   async function start() {
     setState({ kind: "starting" });
+    startedAtRef.current = Date.now();
+    itemCountRef.current = 0;
+    logEvent({ type: "diag.started", properties: { source: "vocab-cat-test" } });
     try {
       const res = await fetch(`${BACKEND_URL}/api/v1/test/start`, {
         method: "POST",
@@ -117,6 +125,7 @@ NEXT_PUBLIC_VOCAB_CAT_TEST_URL=http://localhost:8000
       });
       if (!res.ok) throw new Error(`/start → ${res.status}`);
       const body = await res.json();
+      itemStartRef.current = Date.now();
       setState({
         kind: "running",
         sessionId: body.session_id,
@@ -134,6 +143,8 @@ NEXT_PUBLIC_VOCAB_CAT_TEST_URL=http://localhost:8000
       !!state.item.options &&
       !!state.item.correct_answer &&
       state.item.options[optionIdx] === state.item.correct_answer;
+    const responseTimeMs = Math.max(0, Date.now() - itemStartRef.current);
+    itemCountRef.current += 1;
     try {
       const res = await fetch(
         `${BACKEND_URL}/api/v1/test/${state.sessionId}/respond`,
@@ -143,15 +154,26 @@ NEXT_PUBLIC_VOCAB_CAT_TEST_URL=http://localhost:8000
           body: JSON.stringify({
             item_id: state.item.item_id,
             is_correct: isCorrect,
-            response_time_ms: 5000,
+            response_time_ms: responseTimeMs,
           }),
         }
       );
       if (!res.ok) throw new Error(`/respond → ${res.status}`);
       const body = await res.json();
+      logEvent({
+        type: "diag.item_answered",
+        properties: {
+          itemId: state.item.item_id,
+          isCorrect,
+          responseTimeMs,
+          currentTheta: body.progress.current_theta ?? 0,
+          currentSe: body.progress.current_se ?? 0,
+        },
+      });
       if (body.progress.is_complete || !body.next_item) {
         await fetchResults(state.sessionId);
       } else {
+        itemStartRef.current = Date.now();
         setState({
           kind: "running",
           sessionId: state.sessionId,
@@ -206,6 +228,20 @@ NEXT_PUBLIC_VOCAB_CAT_TEST_URL=http://localhost:8000
       };
 
       onComplete?.(diagnostic);
+      logEvent({
+        type: "diag.completed",
+        properties: {
+          theta: diagnostic.theta,
+          se: r.se ?? 0,
+          cefr: diagnostic.cefr,
+          level: diagnostic.level,
+          dimensionScores: diagnostic.dimensionScores,
+          weakDim: diagnostic.weakDim,
+          strongDim: diagnostic.strongDim,
+          totalItems: itemCountRef.current,
+          durationSec: Math.round((Date.now() - startedAtRef.current) / 1000),
+        },
+      });
       setState({ kind: "complete", sessionId: sid });
     } catch (e) {
       setState({ kind: "error", message: e instanceof Error ? e.message : String(e) });
