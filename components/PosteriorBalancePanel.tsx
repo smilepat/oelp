@@ -34,24 +34,53 @@ function snapshot(): string | null {
 export function PosteriorBalancePanel() {
   const raw = useSyncExternalStore(subscribe, snapshot, () => null);
 
-  const { posteriorMap, balance, starvedQTs, explorationTarget } = useMemo(() => {
+  const { posteriorMap, balance, minSamples, maxSamples, starvedQTs, explorationTarget } = useMemo(() => {
     if (!raw) {
-      return { posteriorMap: null, balance: 0, starvedQTs: [] as string[], explorationTarget: null };
+      return {
+        posteriorMap: null,
+        balance: 0,
+        minSamples: 0,
+        maxSamples: 0,
+        starvedQTs: [] as string[],
+        explorationTarget: null,
+      };
     }
     try {
       const env = JSON.parse(raw);
       if (env.schemaVersion !== 1) {
-        return { posteriorMap: null, balance: 0, starvedQTs: [], explorationTarget: null };
+        return {
+          posteriorMap: null,
+          balance: 0,
+          minSamples: 0,
+          maxSamples: 0,
+          starvedQTs: [],
+          explorationTarget: null,
+        };
       }
       const map = env.posteriors ?? {};
       const bal = posteriorBalance(map);
+      const allSamples = QUESTION_TYPES.map((qt) => map[qt.id]?.samples ?? 0);
       const starved = QUESTION_TYPES.filter((qt) => (map[qt.id]?.samples ?? 0) === 0).map(
         (qt) => qt.name
       );
       const exp = findExplorationTarget(map);
-      return { posteriorMap: map, balance: bal, starvedQTs: starved, explorationTarget: exp };
+      return {
+        posteriorMap: map,
+        balance: bal,
+        minSamples: allSamples.length ? Math.min(...allSamples) : 0,
+        maxSamples: allSamples.length ? Math.max(...allSamples) : 0,
+        starvedQTs: starved,
+        explorationTarget: exp,
+      };
     } catch {
-      return { posteriorMap: null, balance: 0, starvedQTs: [], explorationTarget: null };
+      return {
+        posteriorMap: null,
+        balance: 0,
+        minSamples: 0,
+        maxSamples: 0,
+        starvedQTs: [],
+        explorationTarget: null,
+      };
     }
   }, [raw]);
 
@@ -99,7 +128,7 @@ export function PosteriorBalancePanel() {
 
       <div className="flex flex-wrap items-center gap-3 text-xs">
         <div className="flex flex-col gap-1">
-          <p className="text-zinc-500">balance score</p>
+          <p className="text-zinc-500">relative balance (min/mean)</p>
           <p className="text-2xl font-semibold tabular-nums text-zinc-950 dark:text-zinc-50">
             {balance.toFixed(2)}
           </p>
@@ -113,6 +142,31 @@ export function PosteriorBalancePanel() {
           <p>총 {totalSamples} samples</p>
           <p>{QUESTION_TYPES.length - starvedQTs.length} / {QUESTION_TYPES.length} QT covered</p>
         </div>
+      </div>
+
+      {/* absolute metrics (L2 learning from exploration-policy-long-run-analysis.md) */}
+      <div className="flex flex-wrap gap-3 rounded bg-zinc-50 px-2 py-1.5 text-[10px] dark:bg-zinc-900">
+        <span className="text-zinc-500">absolute:</span>
+        <span className="text-zinc-700 dark:text-zinc-300">
+          min <span className="font-semibold tabular-nums">{minSamples}</span>
+        </span>
+        <span className="text-zinc-700 dark:text-zinc-300">
+          max <span className="font-semibold tabular-nums">{maxSamples}</span>
+        </span>
+        <span className="text-zinc-700 dark:text-zinc-300">
+          ratio min/max{" "}
+          <span className="font-semibold tabular-nums">
+            {maxSamples > 0 ? (minSamples / maxSamples).toFixed(3) : "—"}
+          </span>
+        </span>
+        {minSamples > 0 && maxSamples / Math.max(minSamples, 1) > 10 && (
+          <span
+            className="rounded bg-rose-100 px-1 text-rose-700 dark:bg-rose-950 dark:text-rose-300"
+            title="warm QTs가 cold QTs보다 10배 이상 — adaptive threshold (R5 분석) 검토 시점"
+          >
+            ▶ long-run imbalance
+          </span>
+        )}
       </div>
 
       {starvedQTs.length > 0 && (
