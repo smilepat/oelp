@@ -95,7 +95,7 @@ export function AdaptiveDiagnostic({ onComplete }: Props) {
 NEXT_PUBLIC_VOCAB_CAT_TEST_URL=http://localhost:8000
         </pre>
         <p className="text-amber-700 dark:text-amber-300">
-          가이드: <a href="https://github.com/smilepat/myprojects/blob/main/docs/03-analysis/vocab-cat-test-integration-resolved.md" target="_blank" rel="noreferrer" className="underline">integration-resolved.md</a>
+          가이드: <a href="https://github.com/smilepat/myprojects/blob/main/docs/03-analysis/vocab-cat-test-integration-resolved.md" target="_blank" rel="noopener noreferrer" className="underline">integration-resolved.md</a>
         </p>
       </section>
     );
@@ -214,7 +214,7 @@ NEXT_PUBLIC_VOCAB_CAT_TEST_URL=http://localhost:8000
 
   return (
     <section className="flex flex-col gap-3 rounded-md border border-indigo-200 bg-indigo-50/30 p-4 dark:border-indigo-900 dark:bg-indigo-950/30">
-      <header className="flex items-baseline justify-between">
+      <header className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
         <p className="text-xs uppercase tracking-wider text-indigo-700 dark:text-indigo-300">
           실제 적응형 진단 (vocab-cat-test)
         </p>

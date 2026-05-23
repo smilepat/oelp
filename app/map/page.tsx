@@ -48,7 +48,12 @@ export default function MapPage() {
         )}
       </section>
 
-      <OntologyMap scores={scores} onNodeClick={setSelectedId} height={560} />
+      <div className="block sm:hidden">
+        <OntologyMap scores={scores} onNodeClick={setSelectedId} height={360} />
+      </div>
+      <div className="hidden sm:block">
+        <OntologyMap scores={scores} onNodeClick={setSelectedId} height={560} />
+      </div>
 
       <section className="grid gap-4 sm:grid-cols-2">
         <DetailPanel

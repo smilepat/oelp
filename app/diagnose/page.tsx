@@ -105,12 +105,12 @@ export default function DiagnosePage() {
       </header>
 
       {active && (
-        <section className="flex items-center justify-between rounded-md border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm dark:border-emerald-800 dark:bg-emerald-950">
-          <div>
+        <section className="flex flex-col gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm dark:border-emerald-800 dark:bg-emerald-950 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:gap-2">
             <span className="font-medium text-emerald-900 dark:text-emerald-100">
               활성 진단: {active.name}
             </span>
-            <span className="ml-2 text-xs text-emerald-700 dark:text-emerald-300">
+            <span className="text-xs text-emerald-700 dark:text-emerald-300">
               ({active.setAt ? new Date(active.setAt).toLocaleString() : "default"}) ·{" "}
               <code>/queue</code> 가 이 진단 사용 중
             </span>
@@ -118,7 +118,7 @@ export default function DiagnosePage() {
           <button
             type="button"
             onClick={clearActive}
-            className="text-xs text-emerald-700 underline hover:text-emerald-900 dark:text-emerald-300 dark:hover:text-emerald-100"
+            className="self-start text-xs text-emerald-700 underline hover:text-emerald-900 dark:text-emerald-300 dark:hover:text-emerald-100 sm:self-auto"
           >
             기본값으로 되돌리기
           </button>
@@ -126,7 +126,7 @@ export default function DiagnosePage() {
       )}
 
       <section className="flex flex-col gap-3">
-        <div className="flex items-baseline justify-between">
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
           <p className="text-xs uppercase tracking-wider text-zinc-500">
             Varied diagnostic presets · 원클릭 활성화
           </p>
