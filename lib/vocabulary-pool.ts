@@ -6838,5 +6838,5 @@ export const VOCAB_POOL_META = {
   totalCards: 486,
   uniqueWords: 484,
   source: "vocabulary-db/irt-5D-vocab-db-4opt-filtered.csv",
-  generatedAt: "2026-05-22T15:01:05.241Z",
+  generatedAt: "2026-05-23T05:07:08.231Z",
 };

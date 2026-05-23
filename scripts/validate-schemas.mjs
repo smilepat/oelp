@@ -37,6 +37,11 @@ const PAIRS = [
     schema: "schemas/ontology-weights.schema.json",
     data: "lib/ontology-weights.json",
   },
+  {
+    name: "vocab-pool-source",
+    schema: "schemas/vocab-pool-source.schema.json",
+    data: "lib/vocab-pool-source.json",
+  },
 ];
 
 const ajv = new Ajv({ allErrors: true, strict: false });

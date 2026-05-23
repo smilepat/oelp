@@ -1,0 +1,30 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/smilepat/oelp/schemas/vocab-pool-source.schema.json",
+  "title": "Vocab Pool Source Provenance",
+  "description": "Tracked fingerprint of the (gitignored) CSV used to generate lib/vocabulary-pool.ts. Required to verify build determinism without committing the source CSV.",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "sourceFile",
+    "sourceBytes",
+    "sourceSha256",
+    "sourceRows",
+    "generatedCards",
+    "uniqueWords",
+    "generatedAt",
+    "generator"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "type": "integer", "const": 1 },
+    "sourceFile":    { "type": "string", "minLength": 1 },
+    "sourceBytes":   { "type": "integer", "minimum": 1 },
+    "sourceSha256":  { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "sourceRows":    { "type": "integer", "minimum": 1 },
+    "generatedCards":{ "type": "integer", "minimum": 1 },
+    "uniqueWords":   { "type": "integer", "minimum": 1 },
+    "generatedAt":   { "type": "string", "format": "date-time" },
+    "generator":     { "type": "string", "minLength": 1 }
+  }
+}

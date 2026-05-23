@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "sourceFile": "data/irt-5D-vocab.csv",
+  "sourceBytes": 14175915,
+  "sourceSha256": "9d79d08ce50342e63113bde7b8bfccad3d1734ec0e2e800453c34e3bc9ee2ac7",
+  "sourceRows": 63331,
+  "generatedCards": 486,
+  "uniqueWords": 484,
+  "generatedAt": "2026-05-23T05:07:08.311Z",
+  "generator": "scripts/build-vocab-pool.mjs"
+}

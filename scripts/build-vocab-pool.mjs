@@ -220,6 +220,35 @@ export const VOCAB_POOL_META = {
 writeFileSync(OUT_PATH, ts);
 console.error(`Wrote ${OUT_PATH} (${(ts.length / 1024).toFixed(1)} KB)`);
 
+// ─── 4b. Write source provenance metadata (T3.1) ─────────────────────
+// CSV is gitignored, but we need a tracked fingerprint so anyone can verify
+// that lib/vocabulary-pool.ts was generated from the expected source.
+// Hash the on-disk BYTES (not the decoded string) so the hash matches what
+// tests / CI can independently compute from statSync + readFileSync(path).
+import { createHash } from "node:crypto";
+const rawBytes = readFileSync(CSV_PATH);
+const sourceHash = createHash("sha256").update(rawBytes).digest("hex");
+const META_PATH = join(__dirname, "..", "lib", "vocab-pool-source.json");
+writeFileSync(
+  META_PATH,
+  JSON.stringify(
+    {
+      schemaVersion: 1,
+      sourceFile: "data/irt-5D-vocab.csv",
+      sourceBytes: rawBytes.length,
+      sourceSha256: sourceHash,
+      sourceRows: rows.length,
+      generatedCards: sampled.length,
+      uniqueWords: seenWords.size,
+      generatedAt: new Date().toISOString(),
+      generator: "scripts/build-vocab-pool.mjs",
+    },
+    null,
+    2
+  ) + "\n"
+);
+console.error(`Wrote ${META_PATH} (sha256=${sourceHash.slice(0, 12)}…)`);
+
 // ─── 5. Summary stats to stdout (for log) ────────────────────────────
 
 const byDim = {};
