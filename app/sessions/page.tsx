@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useSyncExternalStore } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 import {
   clearSessions,
   summarizeSessions,
@@ -125,54 +125,7 @@ export default function SessionsPage() {
           아직 세션이 없습니다. <a className="underline" href="/queue">/queue</a>에서 첫 세션을 진행하세요.
         </section>
       ) : (
-        <section className="overflow-x-auto">
-          <table className="w-full border-collapse text-sm">
-            <thead>
-              <tr className="border-b border-zinc-200 text-left text-xs uppercase tracking-wider text-zinc-500 dark:border-zinc-800">
-                <th className="px-2 py-2">#</th>
-                <th className="px-2 py-2">날짜</th>
-                <th className="px-2 py-2">QT</th>
-                <th className="px-2 py-2">algo</th>
-                <th className="px-2 py-2">conf</th>
-                <th className="px-2 py-2">정답</th>
-                <th className="px-2 py-2">만족도</th>
-                <th className="px-2 py-2">계속의향</th>
-                <th className="px-2 py-2">메모</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sessions.map((s, i) => (
-                <tr key={s.sessionId} className="border-b border-zinc-100 dark:border-zinc-900">
-                  <td className="px-2 py-2 text-zinc-500">{i + 1}</td>
-                  <td className="px-2 py-2 font-mono text-xs">
-                    {new Date(s.endedAt).toLocaleString()}
-                  </td>
-                  <td className="px-2 py-2">{s.targetQuestionType}</td>
-                  <td className="px-2 py-2 text-xs">{s.algorithm}</td>
-                  <td className="px-2 py-2 text-xs">{s.confidence}</td>
-                  <td className="px-2 py-2">{s.correct}/{s.total}</td>
-                  <td className="px-2 py-2">
-                    {s.evaluation ? `${s.evaluation.overall_satisfaction}/5` : "—"}
-                  </td>
-                  <td className="px-2 py-2">
-                    {s.evaluation ? s.evaluation.c3_3_continue_intention : "—"}
-                  </td>
-                  <td className="px-2 py-2 text-xs text-zinc-600 dark:text-zinc-400">
-                    {s.evaluation?.notes ? (
-                      <span title={s.evaluation.notes}>
-                        {s.evaluation.notes.length > 30
-                          ? s.evaluation.notes.slice(0, 30) + "…"
-                          : s.evaluation.notes}
-                      </span>
-                    ) : (
-                      "—"
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </section>
+        <SessionList sessions={sessions} />
       )}
 
       <CalibrationHistoryPanel />
@@ -237,6 +190,138 @@ function CalibrationHistoryPanel() {
           </li>
         ))}
       </ul>
+    </section>
+  );
+}
+
+const PAGE_SIZE = 10;
+
+function SessionList({ sessions }: { sessions: SessionRecord[] }) {
+  const [page, setPage] = useState(0);
+  const totalPages = Math.max(1, Math.ceil(sessions.length / PAGE_SIZE));
+  const start = page * PAGE_SIZE;
+  const slice = sessions.slice(start, start + PAGE_SIZE);
+
+  return (
+    <section className="flex flex-col gap-3">
+      {/* Mobile: card list. Desktop: table. */}
+      <ul className="flex flex-col gap-2 sm:hidden">
+        {slice.map((s, idx) => (
+          <li
+            key={s.sessionId}
+            className="flex flex-col gap-1 rounded-md border border-zinc-200 p-3 text-sm dark:border-zinc-800"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-zinc-500">#{start + idx + 1}</span>
+              <time className="font-mono text-[10px] text-zinc-500">
+                {new Date(s.endedAt).toLocaleString()}
+              </time>
+            </div>
+            <p className="font-medium text-zinc-900 dark:text-zinc-100">
+              {s.targetQuestionType}
+            </p>
+            <div className="flex flex-wrap gap-2 text-xs">
+              <span className="rounded bg-zinc-100 px-1.5 py-0.5 text-zinc-700 dark:bg-zinc-900 dark:text-zinc-300">
+                정답 {s.correct}/{s.total}
+              </span>
+              <span className="rounded bg-zinc-100 px-1.5 py-0.5 text-zinc-700 dark:bg-zinc-900 dark:text-zinc-300">
+                {s.algorithm}
+              </span>
+              <span className="rounded bg-zinc-100 px-1.5 py-0.5 text-zinc-700 dark:bg-zinc-900 dark:text-zinc-300">
+                conf: {s.confidence}
+              </span>
+              {s.evaluation && (
+                <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-100">
+                  ★ {s.evaluation.overall_satisfaction}/5
+                </span>
+              )}
+            </div>
+            {s.evaluation?.notes && (
+              <p className="text-xs text-zinc-600 dark:text-zinc-400">
+                {s.evaluation.notes.length > 80
+                  ? s.evaluation.notes.slice(0, 80) + "…"
+                  : s.evaluation.notes}
+              </p>
+            )}
+          </li>
+        ))}
+      </ul>
+
+      <div className="hidden overflow-x-auto sm:block">
+        <table className="w-full border-collapse text-sm">
+          <thead>
+            <tr className="border-b border-zinc-200 text-left text-xs uppercase tracking-wider text-zinc-500 dark:border-zinc-800">
+              <th className="px-2 py-2">#</th>
+              <th className="px-2 py-2">날짜</th>
+              <th className="px-2 py-2">QT</th>
+              <th className="px-2 py-2">algo</th>
+              <th className="px-2 py-2">conf</th>
+              <th className="px-2 py-2">정답</th>
+              <th className="px-2 py-2">만족도</th>
+              <th className="px-2 py-2">계속의향</th>
+              <th className="px-2 py-2">메모</th>
+            </tr>
+          </thead>
+          <tbody>
+            {slice.map((s, idx) => (
+              <tr key={s.sessionId} className="border-b border-zinc-100 dark:border-zinc-900">
+                <td className="px-2 py-2 text-zinc-500">{start + idx + 1}</td>
+                <td className="px-2 py-2 font-mono text-xs">
+                  {new Date(s.endedAt).toLocaleString()}
+                </td>
+                <td className="px-2 py-2">{s.targetQuestionType}</td>
+                <td className="px-2 py-2 text-xs">{s.algorithm}</td>
+                <td className="px-2 py-2 text-xs">{s.confidence}</td>
+                <td className="px-2 py-2">{s.correct}/{s.total}</td>
+                <td className="px-2 py-2">
+                  {s.evaluation ? `${s.evaluation.overall_satisfaction}/5` : "—"}
+                </td>
+                <td className="px-2 py-2">
+                  {s.evaluation ? s.evaluation.c3_3_continue_intention : "—"}
+                </td>
+                <td className="px-2 py-2 text-xs text-zinc-600 dark:text-zinc-400">
+                  {s.evaluation?.notes ? (
+                    <span title={s.evaluation.notes}>
+                      {s.evaluation.notes.length > 30
+                        ? s.evaluation.notes.slice(0, 30) + "…"
+                        : s.evaluation.notes}
+                    </span>
+                  ) : (
+                    "—"
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {totalPages > 1 && (
+        <nav
+          aria-label="세션 페이지네이션"
+          className="flex items-center justify-between gap-3 pt-1 text-xs"
+        >
+          <button
+            type="button"
+            onClick={() => setPage((p) => Math.max(0, p - 1))}
+            disabled={page === 0}
+            className="rounded-md border border-zinc-200 px-3 py-1.5 text-zinc-700 hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-900"
+          >
+            ← 이전
+          </button>
+          <span className="text-zinc-500">
+            {start + 1}–{Math.min(start + PAGE_SIZE, sessions.length)} / {sessions.length}
+          </span>
+          <button
+            type="button"
+            onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+            disabled={page >= totalPages - 1}
+            className="rounded-md border border-zinc-200 px-3 py-1.5 text-zinc-700 hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-900"
+          >
+            다음 →
+          </button>
+        </nav>
+      )}
     </section>
   );
 }
