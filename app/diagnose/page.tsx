@@ -15,6 +15,7 @@ import {
 } from "@/lib/active-diagnostic";
 import { DIAGNOSTIC_PRESETS, type DiagnosticPreset } from "@/lib/diagnostic-presets";
 import { AdaptiveDiagnostic } from "@/components/AdaptiveDiagnostic";
+import { logEvent } from "@/lib/analytics-events";
 
 export default function DiagnosePage() {
   const [result, setResult] = useState<DiagnosticInput | null>(null);
@@ -44,12 +45,17 @@ export default function DiagnosePage() {
     setResult(DEMO_DIAGNOSTIC);
     setActiveDiagnostic(DEMO_DIAGNOSTIC);
     setActive({ name: DEMO_DIAGNOSTIC.studentName, setAt: new Date().toISOString() });
+    logEvent({ type: "diag.started", properties: { source: "preset", presetId: undefined } });
   }
 
   function loadPreset(preset: DiagnosticPreset) {
     setResult(preset.diagnostic);
     setActiveDiagnostic(preset.diagnostic);
     setActive({ name: preset.diagnostic.studentName, setAt: new Date().toISOString() });
+    logEvent({
+      type: "diag.started",
+      properties: { source: "preset", presetId: preset.id },
+    });
   }
 
   function clearActive() {
@@ -71,6 +77,7 @@ export default function DiagnosePage() {
       setActiveDiagnostic(decoded);
       setActive({ name: decoded.studentName, setAt: new Date().toISOString() });
       setPasteText("");
+      logEvent({ type: "diag.started", properties: { source: "paste-import" } });
       return;
     }
     // Try raw JSON
@@ -81,6 +88,7 @@ export default function DiagnosePage() {
         setActiveDiagnostic(parsed);
         setActive({ name: parsed.studentName, setAt: new Date().toISOString() });
         setPasteText("");
+        logEvent({ type: "diag.started", properties: { source: "paste-import" } });
         return;
       }
       setPasteError("DiagnosticInput 스키마와 일치하지 않습니다.");

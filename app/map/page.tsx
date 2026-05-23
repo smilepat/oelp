@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { OntologyMap } from "@/components/OntologyMap";
 import { QUESTION_TYPES, DISTRACTOR_TYPES } from "@/lib/ontology";
 import { DEMO_DIAGNOSTIC } from "@/lib/diagnostic";
 import { compareWeights } from "@/lib/kv-dim-mapping";
+import { logEvent } from "@/lib/analytics-events";
 
 export default function MapPage() {
   const [useDemo, setUseDemo] = useState(false);
@@ -16,6 +17,28 @@ export default function MapPage() {
   const selectedDist = selectedId
     ? DISTRACTOR_TYPES.find((d) => d.id === selectedId)
     : null;
+
+  // Log map view on mount (one-shot per page visit)
+  useEffect(() => {
+    logEvent({ type: "map.viewed", properties: { hasDiagnostic: scores !== undefined } });
+    // intentionally ignore scores dep — first-load signal only
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function handleNodeClick(id: string) {
+    setSelectedId(id);
+    // Determine node type from id prefix
+    const nodeType =
+      id.startsWith("TYPE-")
+        ? "questionType"
+        : id.startsWith("DIST-")
+        ? "distractor"
+        : "keyVariable";
+    logEvent({
+      type: "map.node_clicked",
+      properties: { nodeId: id, nodeType },
+    });
+  }
 
   return (
     <main className="mx-auto flex max-w-5xl flex-col gap-6 px-6 py-12">
@@ -50,10 +73,10 @@ export default function MapPage() {
       </section>
 
       <div className="block sm:hidden">
-        <OntologyMap scores={scores} onNodeClick={setSelectedId} height={360} />
+        <OntologyMap scores={scores} onNodeClick={handleNodeClick} height={360} />
       </div>
       <div className="hidden sm:block">
-        <OntologyMap scores={scores} onNodeClick={setSelectedId} height={560} />
+        <OntologyMap scores={scores} onNodeClick={handleNodeClick} height={560} />
       </div>
 
       <section className="grid gap-4 sm:grid-cols-2">

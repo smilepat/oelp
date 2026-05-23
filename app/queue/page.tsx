@@ -28,6 +28,7 @@ import {
   type BetaPosterior,
 } from "@/lib/recommendation";
 import { loadSessions } from "@/lib/session-store";
+import { logEvent } from "@/lib/analytics-events";
 import {
   saveSession,
   type SessionEvaluation,
@@ -65,6 +66,16 @@ export default function QueuePage() {
         setPlan(result);
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setPosteriors(loaded);
+        logEvent({
+          type: "queue.started",
+          properties: {
+            targetQT: result.targetQuestionType.id,
+            algorithm: result.algorithm,
+            confidence: result.confidence,
+            generator: result.generator,
+            selectionMode: result.selectionMode,
+          },
+        });
       }
     })();
     return () => {
@@ -194,6 +205,17 @@ export default function QueuePage() {
     setSessionRecord(record);
     setSummary({ correct, total: responses.length, advancements, boxAfter, posterior });
     setDone(true);
+    logEvent({
+      type: "queue.completed",
+      properties: {
+        qtId: planNonNull.targetQuestionType.id,
+        correct,
+        total: responses.length,
+        advancements,
+        durationSec,
+        balanceAfter: posteriorBalance(postMap),
+      },
+    });
   }
 
   function saveWithEvaluation(evaluation: SessionEvaluation | undefined) {
