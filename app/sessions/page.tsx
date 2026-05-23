@@ -12,6 +12,7 @@ import {
 } from "@/lib/session-export";
 import { ErrorLogPanel } from "@/components/ErrorLogPanel";
 import { TrendPanel } from "@/components/TrendPanel";
+import { PosteriorBalancePanel } from "@/components/PosteriorBalancePanel";
 import {
   getRegressionEvents,
   countByResult,
@@ -128,6 +129,8 @@ export default function SessionsPage() {
       ) : (
         <SessionList sessions={sessions} />
       )}
+
+      <PosteriorBalancePanel />
 
       <TrendPanel sessions={sessions} />
 
