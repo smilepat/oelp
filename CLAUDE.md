@@ -120,8 +120,7 @@ vocab-cat-test (semantic/contextual/form/relational/pragmatic) ↔ OELP (D2/D3/D
 **위치**: components/AdaptiveDiagnostic.tsx DIM_MAP, scripts/verify-vocab-cat-test.mjs DIM_MAP. 둘 다 일치 유지.
 
 ### 5.7 vocab-cat-test CORS for OELP dev
-ALLOWED_ORIGINS env var에 `http://localhost:3000`, `localhost:3001` 둘 다 추가 필요.
-(PR #2 pending merge — 이후 default에 포함)
+**(Resolved 2026-05-23)** PR #2 merged → ALLOWED_ORIGINS 기본값에 `http://localhost:3000`, `localhost:3001` 자동 포함. env var 무설정 동작.
 
 ### 5.8 isDiagnosticInput vs schema 분리
 `lib/diagnostic.ts isDiagnosticInput`은 permissive (typeof === "object" → null 허용).
@@ -166,7 +165,7 @@ ALLOWED_ORIGINS env var에 `http://localhost:3000`, `localhost:3001` 둘 다 추
 
 1. ☐ Cloud Run vocab-cat-test 배포 (30분, runbook 준비)
 2. ☐ EBS-demo Firebase config (30분, 코드는 이미 wired)
-3. ☐ vocab-cat-test PR #2 merge (CORS 1줄, pending)
+3. ✅ vocab-cat-test PR #2 merge (CORS) — **resolved 2026-05-23**
 4. ☐ 학습자 채널 ≥ 1명 확보 (Stage C 활성화)
 5. ☐ 본인 dogfooding-3+ 진행 (preset UI 사용 후 calibration)
 
