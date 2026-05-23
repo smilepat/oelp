@@ -13,6 +13,7 @@ import {
   clearActiveDiagnostic,
   getActiveDiagnosticInfo,
 } from "@/lib/active-diagnostic";
+import { DIAGNOSTIC_PRESETS, type DiagnosticPreset } from "@/lib/diagnostic-presets";
 
 export default function DiagnosePage() {
   const [result, setResult] = useState<DiagnosticInput | null>(null);
@@ -42,6 +43,12 @@ export default function DiagnosePage() {
     setResult(DEMO_DIAGNOSTIC);
     setActiveDiagnostic(DEMO_DIAGNOSTIC);
     setActive({ name: DEMO_DIAGNOSTIC.studentName, setAt: new Date().toISOString() });
+  }
+
+  function loadPreset(preset: DiagnosticPreset) {
+    setResult(preset.diagnostic);
+    setActiveDiagnostic(preset.diagnostic);
+    setActive({ name: preset.diagnostic.studentName, setAt: new Date().toISOString() });
   }
 
   function clearActive() {
@@ -117,21 +124,56 @@ export default function DiagnosePage() {
         </section>
       )}
 
-      <section className="flex gap-3">
-        <button
-          type="button"
-          onClick={loadDemo}
-          className="rounded-md bg-zinc-900 px-4 py-2 text-sm text-zinc-50 transition-colors hover:bg-zinc-700 dark:bg-zinc-50 dark:text-zinc-950 dark:hover:bg-zinc-300"
-        >
-          데모 진단 로드
-        </button>
-        <button
-          type="button"
-          onClick={() => setResult(null)}
-          className="rounded-md border border-zinc-200 px-4 py-2 text-sm text-zinc-600 transition-colors hover:bg-zinc-50 dark:border-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-900"
-        >
-          미리보기 초기화
-        </button>
+      <section className="flex flex-col gap-3">
+        <div className="flex items-baseline justify-between">
+          <p className="text-xs uppercase tracking-wider text-zinc-500">
+            Varied diagnostic presets · 원클릭 활성화
+          </p>
+          <p className="text-[10px] text-zinc-500">
+            calibration rank-1 X 회피 — α/β/γ/δ 중 다른 것을 골라 여러 세션 진행
+          </p>
+        </div>
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          {DIAGNOSTIC_PRESETS.map((preset) => {
+            const isActive = active?.name === preset.diagnostic.studentName;
+            return (
+              <button
+                key={preset.id}
+                type="button"
+                data-testid={`preset-${preset.id}`}
+                onClick={() => loadPreset(preset)}
+                className={`flex flex-col items-start gap-1 rounded-md border px-3 py-2 text-left transition-colors ${
+                  isActive
+                    ? "border-emerald-400 bg-emerald-50 dark:border-emerald-600 dark:bg-emerald-950"
+                    : "border-zinc-200 hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-900"
+                }`}
+              >
+                <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                  {preset.label}
+                </span>
+                <span className="text-xs text-zinc-600 dark:text-zinc-400">
+                  {preset.description}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+        <div className="flex gap-3 pt-1">
+          <button
+            type="button"
+            onClick={loadDemo}
+            className="rounded-md border border-zinc-200 px-3 py-1.5 text-xs text-zinc-600 transition-colors hover:bg-zinc-50 dark:border-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-900"
+          >
+            데모 진단 로드 (constant)
+          </button>
+          <button
+            type="button"
+            onClick={() => setResult(null)}
+            className="rounded-md border border-zinc-200 px-3 py-1.5 text-xs text-zinc-600 transition-colors hover:bg-zinc-50 dark:border-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-900"
+          >
+            미리보기 초기화
+          </button>
+        </div>
       </section>
 
       <section className="flex flex-col gap-2 rounded-md border border-zinc-200 p-4 dark:border-zinc-800">
