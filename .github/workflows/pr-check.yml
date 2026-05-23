@@ -36,6 +36,9 @@ jobs:
       - name: JSON Schema validation (T1.1)
         run: node scripts/validate-schemas.mjs
 
+      - name: README counter freshness (T2.1)
+        run: node scripts/update-readme-counters.mjs --check
+
       - name: C4.1 dimension-mapping regression
         run: |
           mkdir -p out
