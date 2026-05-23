@@ -72,6 +72,9 @@ jobs:
         run: npx playwright test
         # webServer block in playwright.config.ts auto-starts `next start` on CI
 
+      - name: Cross-repo link check (smilepat/* references)
+        run: node scripts/check-cross-repo-links.mjs
+
       - name: Upload C4 reports
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
