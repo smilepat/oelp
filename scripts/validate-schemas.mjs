@@ -32,6 +32,11 @@ const PAIRS = [
     schema: "schemas/regression-history.schema.json",
     data: "lib/regression-history.json",
   },
+  {
+    name: "ontology-weights",
+    schema: "schemas/ontology-weights.schema.json",
+    data: "lib/ontology-weights.json",
+  },
 ];
 
 const ajv = new Ajv({ allErrors: true, strict: false });

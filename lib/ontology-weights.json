@@ -1,6 +1,11 @@
 {
   "schemaVersion": 1,
   "version": "v2-2026-05-22",
+  "lastWriter": {
+    "tool": "manual",
+    "writtenAt": "2026-05-23T04:00:00Z",
+    "reason": "T1.2 bootstrap — initial lastWriter field added for write-protection gate"
+  },
   "calibrationHistory": [
     {
       "version": "v1-2026-05-22",

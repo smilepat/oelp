@@ -135,6 +135,11 @@ const nextVersion = `auto-${new Date().toISOString().slice(0, 10)}-${Date.now().
 const next = {
   ...before,
   version: nextVersion,
+  lastWriter: {
+    tool: "promote-weights",
+    writtenAt: new Date().toISOString(),
+    reason,
+  },
   weights: newWeights,
   calibrationHistory: [
     ...(before.calibrationHistory ?? []),

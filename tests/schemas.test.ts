@@ -145,4 +145,84 @@ describe("Schema validation (T1.1)", () => {
     const validate = compileSchema(SCHEMA_PATH);
     expect(validate({ schemaVersion: 1, events: [], hax: true })).toBe(false);
   });
+
+  // ─── Ontology weights schema (T1.2 write-protection) ──────────────
+
+  const WEIGHTS_SCHEMA = "schemas/ontology-weights.schema.json";
+
+  test("ontology-weights.json matches its schema", () => {
+    const validate = compileSchema(WEIGHTS_SCHEMA);
+    const data = loadJson("lib/ontology-weights.json");
+    const ok = validate(data);
+    if (!ok) console.error(validate.errors);
+    expect(ok).toBe(true);
+  });
+
+  test("ontology-weights rejects file without lastWriter", () => {
+    const validate = compileSchema(WEIGHTS_SCHEMA);
+    const bad = {
+      schemaVersion: 1,
+      version: "v3-bad",
+      weights: {
+        "TYPE-x": { D1_Form: 0.2, D2_Meaning: 0.2, D3_Context: 0.2, D4_Network: 0.2, D5_Usage: 0.2 },
+      },
+    };
+    expect(validate(bad)).toBe(false);
+  });
+
+  test("ontology-weights rejects manual lastWriter without reason", () => {
+    const validate = compileSchema(WEIGHTS_SCHEMA);
+    const bad = {
+      schemaVersion: 1,
+      version: "v3-bad",
+      lastWriter: { tool: "manual", writtenAt: "2026-01-01T00:00:00Z" },
+      weights: {
+        "TYPE-x": { D1_Form: 0.2, D2_Meaning: 0.2, D3_Context: 0.2, D4_Network: 0.2, D5_Usage: 0.2 },
+      },
+    };
+    expect(validate(bad)).toBe(false);
+  });
+
+  test("ontology-weights rejects unknown lastWriter.tool", () => {
+    const validate = compileSchema(WEIGHTS_SCHEMA);
+    const bad = {
+      schemaVersion: 1,
+      version: "v3-bad",
+      lastWriter: { tool: "hacker", writtenAt: "2026-01-01T00:00:00Z" },
+      weights: {
+        "TYPE-x": { D1_Form: 0.2, D2_Meaning: 0.2, D3_Context: 0.2, D4_Network: 0.2, D5_Usage: 0.2 },
+      },
+    };
+    expect(validate(bad)).toBe(false);
+  });
+
+  test("ontology-weights accepts promote-weights tool without reason", () => {
+    const validate = compileSchema(WEIGHTS_SCHEMA);
+    const ok = {
+      schemaVersion: 1,
+      version: "v3-promote",
+      lastWriter: { tool: "promote-weights", writtenAt: "2026-05-23T00:00:00Z" },
+      weights: {
+        "TYPE-x": { D1_Form: 0.2, D2_Meaning: 0.2, D3_Context: 0.2, D4_Network: 0.2, D5_Usage: 0.2 },
+      },
+    };
+    expect(validate(ok)).toBe(true);
+  });
+
+  test("ontology-weights rejects weight row with extra dimension", () => {
+    const validate = compileSchema(WEIGHTS_SCHEMA);
+    const bad = {
+      schemaVersion: 1,
+      version: "v3-bad",
+      lastWriter: { tool: "promote-weights", writtenAt: "2026-05-23T00:00:00Z" },
+      weights: {
+        "TYPE-x": {
+          D1_Form: 0.2, D2_Meaning: 0.2, D3_Context: 0.2,
+          D4_Network: 0.2, D5_Usage: 0.2,
+          D6_Cloze: 0.1,
+        },
+      },
+    };
+    expect(validate(bad)).toBe(false);
+  });
 });

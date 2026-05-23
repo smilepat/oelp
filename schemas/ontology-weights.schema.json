@@ -1,0 +1,77 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/smilepat/oelp/schemas/ontology-weights.schema.json",
+  "title": "Ontology Weights",
+  "description": "Single source of truth for QuestionType → dimension weight matrix. ONLY scripts/promote-weights.mjs should write this file — manual edits are caught by lastWriter check.",
+  "type": "object",
+  "required": ["schemaVersion", "version", "lastWriter", "weights"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "type": "integer",
+      "const": 1
+    },
+    "version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "lastWriter": {
+      "type": "object",
+      "description": "Identifies the agent that produced this file. Set by promote-weights.mjs. Manual edits MUST set tool=\"manual\" + a non-empty reason — caught by allOf below.",
+      "required": ["tool", "writtenAt"],
+      "additionalProperties": false,
+      "properties": {
+        "tool": {
+          "type": "string",
+          "enum": ["promote-weights", "manual"]
+        },
+        "writtenAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 10
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "tool": { "const": "manual" } } },
+          "then": { "required": ["reason"] }
+        }
+      ]
+    },
+    "calibrationHistory": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["version", "trigger"],
+        "additionalProperties": true,
+        "properties": {
+          "version": { "type": "string", "minLength": 1 },
+          "trigger": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "weights": {
+      "type": "object",
+      "description": "Map of QuestionType id → 5D weight vector. Each row should sum to ~1.0 (validated separately at runtime).",
+      "patternProperties": {
+        "^TYPE-.+$": {
+          "type": "object",
+          "required": ["D1_Form", "D2_Meaning", "D3_Context", "D4_Network", "D5_Usage"],
+          "additionalProperties": false,
+          "properties": {
+            "D1_Form":    { "type": "number", "minimum": 0, "maximum": 1 },
+            "D2_Meaning": { "type": "number", "minimum": 0, "maximum": 1 },
+            "D3_Context": { "type": "number", "minimum": 0, "maximum": 1 },
+            "D4_Network": { "type": "number", "minimum": 0, "maximum": 1 },
+            "D5_Usage":   { "type": "number", "minimum": 0, "maximum": 1 }
+          }
+        }
+      },
+      "additionalProperties": false,
+      "minProperties": 1
+    }
+  }
+}
