@@ -211,3 +211,86 @@ export function applyResponses(
   }
   return next;
 }
+
+// ─── Phase 2 P-1 refinement: exploration vs exploitation ────────────────
+//
+// When total samples are high but unevenly distributed across QTs, pure
+// Thompson sampling can get stuck never picking under-sampled QTs (cold
+// branches). Exploration target surfaces "the QT we know LEAST about" so
+// the UI / queue builder can offer it as an alternative every N sessions.
+//
+// Design choice: identify the QT with the fewest samples whose Thompson
+// θ_sample is also not in the top-2 weakest (otherwise it's already covered
+// by primary/alternate recommendation).
+
+export interface ExplorationCandidate {
+  questionType: QuestionType;
+  samples: number;
+  /** Posterior mean = α / (α + β). 0 = certain wrong, 1 = certain correct. */
+  posteriorMean: number;
+  /** "Information value" — variance-weighted (high var × low samples = high info). */
+  informationValue: number;
+}
+
+/**
+ * Find the QT we know LEAST about (highest information value if probed).
+ *
+ * Pure function. Independent of recommendQuestionType. Use this to
+ * occasionally offer the learner an under-sampled QT as a queue alternative,
+ * preventing cold-start starvation when N is high but uneven.
+ *
+ * Returns null if all QTs have >= maxSamplesToConsider samples (well-explored).
+ */
+export function findExplorationTarget(
+  posteriors: Record<string, BetaPosterior>,
+  opts: { maxSamplesToConsider?: number; excludeQtIds?: readonly string[] } = {}
+): ExplorationCandidate | null {
+  const maxSamples = opts.maxSamplesToConsider ?? 20;
+  const exclude = new Set(opts.excludeQtIds ?? []);
+
+  let best: ExplorationCandidate | null = null;
+  for (const qt of QUESTION_TYPES) {
+    if (exclude.has(qt.id)) continue;
+    const post = posteriors[qt.id];
+    if (!post) continue;
+    if (post.samples >= maxSamples) continue;
+
+    const sum = post.alpha + post.beta;
+    const mean = post.alpha / sum;
+    const variance = (post.alpha * post.beta) / (sum * sum * (sum + 1));
+    // Information value: high when both variance is high AND samples low.
+    // Damped by (1 + samples) so already-sampled QTs lose priority.
+    const informationValue = variance / (1 + post.samples);
+
+    const candidate: ExplorationCandidate = {
+      questionType: qt,
+      samples: post.samples,
+      posteriorMean: mean,
+      informationValue,
+    };
+    if (!best || candidate.informationValue > best.informationValue) {
+      best = candidate;
+    }
+  }
+  return best;
+}
+
+/**
+ * Effective sample size threshold (ESS-like).
+ *
+ * Returns a number that tells how "well-explored" a posterior map is:
+ *   - 0       = no data (just prior)
+ *   - 1.0     = balanced — every QT has roughly the average samples
+ *   - < 1.0   = some QTs starved
+ *
+ * Computed as min(samples) / mean(samples). Useful for analytics-events
+ * panel to flag when exploration target should be considered.
+ */
+export function posteriorBalance(posteriors: Record<string, BetaPosterior>): number {
+  const samples = Object.values(posteriors).map((p) => p.samples);
+  if (samples.length === 0) return 0;
+  const mean = samples.reduce((a, b) => a + b, 0) / samples.length;
+  if (mean === 0) return 0;
+  const min = Math.min(...samples);
+  return min / mean;
+}
