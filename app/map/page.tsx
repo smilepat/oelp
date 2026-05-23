@@ -4,6 +4,7 @@ import { useState } from "react";
 import { OntologyMap } from "@/components/OntologyMap";
 import { QUESTION_TYPES, DISTRACTOR_TYPES } from "@/lib/ontology";
 import { DEMO_DIAGNOSTIC } from "@/lib/diagnostic";
+import { compareWeights } from "@/lib/kv-dim-mapping";
 
 export default function MapPage() {
   const [useDemo, setUseDemo] = useState(false);
@@ -76,15 +77,57 @@ export default function MapPage() {
                   </span>
                 ))}
               </div>
-              <ul className="mt-2 text-xs text-zinc-600 dark:text-zinc-400">
-                {(Object.keys(selectedQt.weights) as Array<keyof typeof selectedQt.weights>).map(
-                  (d) => (
-                    <li key={d}>
-                      {d.replace("_", " ")} : {(selectedQt.weights[d] * 100).toFixed(0)}%
-                    </li>
-                  )
-                )}
-              </ul>
+              <div className="mt-2 flex flex-col gap-1.5 text-xs">
+                <div className="flex items-baseline justify-between text-zinc-500">
+                  <span className="uppercase tracking-wider">5D weights</span>
+                  <span className="text-[10px]">declared vs derived (C4.1)</span>
+                </div>
+                {compareWeights(selectedQt.weights, selectedQt.keyVariables).map((row) => {
+                  const dec = row.declared * 100;
+                  const der = row.derived * 100;
+                  return (
+                    <div key={row.dim} className="flex items-center gap-2">
+                      <span className="w-20 shrink-0 text-zinc-600 dark:text-zinc-400">
+                        {row.dim.replace("_", " ")}
+                      </span>
+                      <div className="flex flex-1 flex-col gap-0.5">
+                        <div className="flex h-1.5 overflow-hidden rounded bg-zinc-100 dark:bg-zinc-900">
+                          <div
+                            className="bg-zinc-700 dark:bg-zinc-300"
+                            style={{ width: `${dec}%` }}
+                            title={`declared ${dec.toFixed(0)}%`}
+                          />
+                        </div>
+                        <div className="flex h-1.5 overflow-hidden rounded bg-zinc-100 dark:bg-zinc-900">
+                          <div
+                            className="bg-indigo-500 dark:bg-indigo-400"
+                            style={{ width: `${der}%` }}
+                            title={`derived ${der.toFixed(0)}%`}
+                          />
+                        </div>
+                      </div>
+                      <span className="w-20 shrink-0 text-right tabular-nums text-[10px] text-zinc-500">
+                        {dec.toFixed(0)} / {der.toFixed(0)}
+                      </span>
+                      {row.contradiction && (
+                        <span
+                          className="rounded bg-rose-100 px-1 text-[9px] text-rose-700 dark:bg-rose-950 dark:text-rose-300"
+                          title={
+                            row.contradiction === "declared-over"
+                              ? "도메인 keyVariables 증거 없음 (derived = 0%) 인데 declared ≥ 20%"
+                              : "도메인 keyVariables 증거 있음 (derived ≥ 20%) 인데 declared < 5%"
+                          }
+                        >
+                          {row.contradiction === "declared-over" ? "over" : "under"}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+                <p className="mt-1 text-[10px] text-zinc-500">
+                  ▣ declared (ontology-weights.json) · ◆ derived (keyVariables × C4.1 매핑)
+                </p>
+              </div>
             </div>
           ) : null}
         </DetailPanel>
