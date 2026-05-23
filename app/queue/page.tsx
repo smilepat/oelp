@@ -20,7 +20,11 @@ import {
   loadPosteriors,
   persistSessionResponses,
 } from "@/lib/recommendation-store";
-import { posteriorConfidence, type BetaPosterior } from "@/lib/recommendation";
+import {
+  posteriorConfidence,
+  findExplorationTarget,
+  type BetaPosterior,
+} from "@/lib/recommendation";
 import {
   saveSession,
   type SessionEvaluation,
@@ -38,17 +42,20 @@ interface Response {
 export default function QueuePage() {
   const diagnostic = useMemo(() => getActiveDiagnostic(), []);
   const [plan, setPlan] = useState<QueuePlanV3 | null>(null);
+  const [posteriors, setPosteriors] = useState<Record<string, BetaPosterior> | null>(null);
 
   // V3 generator-based plan loading (P-2 W4). One-shot async on mount —
   // eslint-disable for setState in effect (browser-only async resource).
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const posteriors = loadPosteriors(diagnostic.dimensionScores);
-      const result = await buildQueueV3(diagnostic, posteriors, defaultGeneratorChain());
+      const loaded = loadPosteriors(diagnostic.dimensionScores);
+      const result = await buildQueueV3(diagnostic, loaded, defaultGeneratorChain());
       if (!cancelled) {
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setPlan(result);
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setPosteriors(loaded);
       }
     })();
     return () => {
@@ -234,6 +241,27 @@ export default function QueuePage() {
           <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[10px] uppercase tracking-wider text-sky-800 dark:bg-sky-950 dark:text-sky-200">
             gen: {planNonNull.generator}
           </span>
+          {(() => {
+            // Phase 2 P-1 W9 exploration target (myprojects docs/02-design/
+            // phase2-p1-recommendation-w9-exploration.md). Excludes primary +
+            // alternate since those are already covered by main recommendation.
+            if (!posteriors) return null;
+            const exp = findExplorationTarget(posteriors, {
+              excludeQtIds: [
+                planNonNull.targetQuestionType.id,
+                planNonNull.alternateQuestionType.id,
+              ],
+            });
+            if (!exp) return null;
+            return (
+              <span
+                className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] uppercase tracking-wider text-amber-800 dark:bg-amber-950 dark:text-amber-200"
+                title={`Information-rich target: ${exp.questionType.name} has only ${exp.samples} samples. Worth probing.`}
+              >
+                explore: {exp.questionType.name} ({exp.samples})
+              </span>
+            );
+          })()}
         </div>
         <p className="text-sm leading-6 text-zinc-600 dark:text-zinc-400">
           약점 추정 정답률: {(planNonNull.predictedCorrectness * 100).toFixed(0)}% · 차원:{" "}
