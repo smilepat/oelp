@@ -107,6 +107,60 @@ describe("error-log global handlers (A7++)", () => {
     expect(log[log.length - 1].message).toBe("unhandled promise rejection");
   });
 
+  test("T7a: writeErrorLog quota-exceeded path drops oldest half + retries", () => {
+    // 110 entries written; setItem throws "QuotaExceededError" on first call.
+    // Then second setItem with half slice should succeed.
+    const bulk = Array.from({ length: 110 }, (_, i) => ({
+      id: `q-${i}`,
+      occurredAt: new Date().toISOString(),
+      source: "manual" as const,
+      message: `m-${i}`,
+    }));
+
+    let setCallCount = 0;
+    const realSetItem = Storage.prototype.setItem.bind(localStorage);
+    const stub = vi.spyOn(Storage.prototype, "setItem").mockImplementation(function (
+      this: Storage,
+      key: string,
+      value: string
+    ) {
+      setCallCount++;
+      if (setCallCount === 1) {
+        const err = new Error("QuotaExceededError") as Error & { name: string };
+        err.name = "QuotaExceededError";
+        throw err;
+      }
+      realSetItem(key, value);
+    });
+
+    // Trigger via writeErrorLog (imported from lib)
+    writeErrorLog(bulk);
+
+    // First call threw → second call written half MAX_ENTRIES = 50 entries
+    expect(setCallCount).toBe(2);
+    expect(readErrorLog().length).toBe(50);
+
+    stub.mockRestore();
+  });
+
+  test("T7b: writeErrorLog second setItem also throws → silent give-up", () => {
+    const bulk = Array.from({ length: 5 }, (_, i) => ({
+      id: `s-${i}`,
+      occurredAt: new Date().toISOString(),
+      source: "manual" as const,
+      message: `m-${i}`,
+    }));
+
+    const stub = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("QuotaExceededError");
+    });
+
+    // Should NOT throw despite both setItem calls failing
+    expect(() => writeErrorLog(bulk)).not.toThrow();
+
+    stub.mockRestore();
+  });
+
   test("T8: downloadErrorLog triggers anchor click + revokes URL", () => {
     writeErrorLog([
       {
