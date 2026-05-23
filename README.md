@@ -190,6 +190,7 @@ node scripts/calibrate.mjs --responses data/dogfood.json --min 100 --lambda 1.0 
 | P-2 EBS Content Foundation | 100% (6 weeks) |
 | dogfooding-1 | 30 응답, 90% 정답률, C4.1 gate 발동 확인 (D2 over-declared) |
 | dogfooding-2 | real 30 + sim 1200 결합, C4.1 gate 재발동 (D3 under-declared, 자동 롤백) |
+| **vocab-cat-test 통합** | ✅ 완료 (Python venv 우회) — pytest 177 pass, theta variance 0.03 → **C1.2 measured PASS** |
 
 상세: [`docs/04-report/oelp-integrated-summary.md`](https://github.com/smilepat/myprojects/blob/main/docs/04-report/oelp-integrated-summary.md)
 
