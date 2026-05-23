@@ -1,0 +1,91 @@
+# T3.2 — Dependabot config (long-term stability roadmap).
+#
+# Goals:
+#   1. Weekly security/minor bumps for runtime deps (Next, React, Chart.js,
+#      Cytoscape, AJV).
+#   2. Single grouped PR per ecosystem to keep review cost low for solo dev.
+#   3. GitHub Actions versions kept current — pr-check.yml uses peter-evans,
+#      actions/checkout, etc.
+#
+# Conservative defaults: minor + patch only (major upgrades require manual
+# review since Next.js / React major bumps have a history of breaking
+# changes that need attention).
+
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Asia/Seoul"
+    open-pull-requests-limit: 3
+    versioning-strategy: increase
+    labels:
+      - "dependencies"
+      - "automated"
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    groups:
+      runtime-frameworks:
+        patterns:
+          - "next"
+          - "react"
+          - "react-dom"
+        update-types:
+          - "minor"
+          - "patch"
+      visualizations:
+        patterns:
+          - "chart.js"
+          - "react-chartjs-2"
+          - "cytoscape"
+          - "cytoscape*"
+        update-types:
+          - "minor"
+          - "patch"
+      tooling:
+        patterns:
+          - "typescript"
+          - "vitest"
+          - "@vitest/*"
+          - "eslint"
+          - "eslint-config-next"
+          - "@types/*"
+        update-types:
+          - "minor"
+          - "patch"
+      validation:
+        patterns:
+          - "ajv"
+          - "ajv-formats"
+        update-types:
+          - "minor"
+          - "patch"
+    ignore:
+      # Major bumps reviewed manually — see CLAUDE.md / dimension-mapping doc
+      # for breaking-change history (Next 15→16 cost 2h of fixes).
+      - dependency-name: "next"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react-dom"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Asia/Seoul"
+    open-pull-requests-limit: 2
+    labels:
+      - "ci"
+      - "automated"
+    commit-message:
+      prefix: "chore(ci)"
