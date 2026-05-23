@@ -11,6 +11,7 @@ import {
   downloadFullSessionsJSON,
 } from "@/lib/session-export";
 import { ErrorLogPanel } from "@/components/ErrorLogPanel";
+import { TrendPanel } from "@/components/TrendPanel";
 import {
   getRegressionEvents,
   countByResult,
@@ -127,6 +128,8 @@ export default function SessionsPage() {
       ) : (
         <SessionList sessions={sessions} />
       )}
+
+      <TrendPanel sessions={sessions} />
 
       <CalibrationHistoryPanel />
 
