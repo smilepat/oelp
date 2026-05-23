@@ -9,6 +9,7 @@ import {
   type VocabCard,
 } from "@/lib/queue";
 import { defaultGeneratorChain } from "@/lib/content-generator";
+import type { ValidatorIssue } from "@/lib/content-validators";
 import {
   applyResponses,
   countAdvancements,
@@ -241,6 +242,10 @@ export default function QueuePage() {
         <p className="text-xs text-zinc-500">
           ※ 어휘 풀: vocabulary-db (484 unique lemmas, 486 cards). 룰엔진: PRD §B-4.
         </p>
+        <GeneratorChainStatus
+          generator={planNonNull.generator}
+          issues={planNonNull.generatorIssues}
+        />
       </header>
 
       {!done && card && (
@@ -383,6 +388,88 @@ export default function QueuePage() {
         </section>
       )}
     </main>
+  );
+}
+
+function GeneratorChainStatus({
+  generator,
+  issues,
+}: {
+  generator: string;
+  issues: ValidatorIssue[];
+}) {
+  // Parse "chain[ebs-criteria-engine-v1→local-pool-v1]" into ordered steps.
+  const steps = useMemo(() => {
+    const m = generator.match(/^chain\[(.+)\]$/);
+    if (!m) return [generator];
+    return m[1].split("→");
+  }, [generator]);
+
+  const errorCount = issues.filter((i) => i.severity === "error").length;
+  const warningCount = issues.filter((i) => i.severity === "warning").length;
+
+  // Determine which generator actually produced cards (last in chain or only one).
+  // Heuristic: if first step has EBS_* issue, EBS was skipped/failed → fallback used.
+  const ebsSkipped = issues.some((i) => i.code?.startsWith("EBS_"));
+  const activeStepIdx = ebsSkipped ? steps.length - 1 : 0;
+
+  return (
+    <details className="rounded-md border border-zinc-200 p-3 text-xs dark:border-zinc-800">
+      <summary className="cursor-pointer text-zinc-600 dark:text-zinc-400">
+        Generator chain · 활성: <code className="text-zinc-900 dark:text-zinc-100">{steps[activeStepIdx]}</code>
+        {errorCount > 0 && (
+          <span className="ml-2 rounded bg-rose-100 px-1.5 py-0.5 text-[10px] text-rose-700 dark:bg-rose-950 dark:text-rose-300">
+            {errorCount} error(s)
+          </span>
+        )}
+        {warningCount > 0 && (
+          <span className="ml-2 rounded bg-amber-100 px-1.5 py-0.5 text-[10px] text-amber-700 dark:bg-amber-950 dark:text-amber-300">
+            {warningCount} warning(s)
+          </span>
+        )}
+      </summary>
+      <div className="mt-2 flex flex-col gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {steps.map((s, i) => (
+            <span key={i} className="flex items-center gap-1">
+              <span
+                className={
+                  i === activeStepIdx
+                    ? "rounded bg-emerald-100 px-2 py-0.5 font-medium text-emerald-900 dark:bg-emerald-950 dark:text-emerald-100"
+                    : "rounded bg-zinc-100 px-2 py-0.5 text-zinc-600 line-through dark:bg-zinc-900 dark:text-zinc-500"
+                }
+              >
+                {s}
+              </span>
+              {i < steps.length - 1 && <span className="text-zinc-400">→</span>}
+            </span>
+          ))}
+        </div>
+        {issues.length === 0 ? (
+          <p className="text-zinc-500">검증 issues 없음 — 모든 카드 통과.</p>
+        ) : (
+          <ul className="flex flex-col gap-1 text-[11px]">
+            {issues.slice(0, 5).map((iss, idx) => (
+              <li
+                key={idx}
+                className={`rounded px-2 py-1 ${
+                  iss.severity === "error"
+                    ? "bg-rose-50 text-rose-900 dark:bg-rose-950 dark:text-rose-100"
+                    : "bg-amber-50 text-amber-900 dark:bg-amber-950 dark:text-amber-100"
+                }`}
+              >
+                <code>{iss.code}</code> · {iss.message}
+              </li>
+            ))}
+            {issues.length > 5 && (
+              <li className="text-[10px] text-zinc-500">
+                +{issues.length - 5} 추가 issue 생략
+              </li>
+            )}
+          </ul>
+        )}
+      </div>
+    </details>
   );
 }
 
