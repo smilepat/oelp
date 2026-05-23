@@ -1,8 +1,8 @@
 # OELP — Ontology English Learning Platform
 
-> Phase 1 MVP + P-1 Recommendation v2 + P-1.5 Bridge + P-2 EBS Foundation
-> Status: **305 Vitest tests · 7 routes · 20 lib modules · 4-layer safety net**
-> Owner: [smilepat](https://github.com/smilepat) · 2026-05-23
+> Phase 1 MVP + P-1 Recommendation v2 + P-1.5 Bridge + P-2 EBS Foundation + v4 Adaptive Exploration
+> Status: **305 Vitest tests · 7 routes · 20 lib modules · 18 scripts · 10 components · 4-layer safety net**
+> Owner: [smilepat](https://github.com/smilepat) · 2026-05-24
 
 본 레포는 [LogicFlow EdTech 생태계](https://github.com/smilepat/myprojects)의 통합 구현체다. **신규 빌드가 아니라 기존 자산 통합 레이어**.
 
@@ -109,7 +109,7 @@ node scripts/calibrate.mjs --responses data/dogfood.json --min 100 --lambda 1.0 
 
 ---
 
-## 4. Scripts (17)
+## 4. Scripts (18)
 
 | 스크립트 | 역할 |
 |---|---|
@@ -127,6 +127,10 @@ node scripts/calibrate.mjs --responses data/dogfood.json --min 100 --lambda 1.0 
 | `verify-vocab-cat-test.mjs` | vocab-cat-test multi-step CAT 흐름 검증 + 5D 매핑 |
 | `dogfood-3-presets.mjs` | preset 기반 dogfooding 시뮬레이터 (seed-based, reproducible) |
 | `dogfood-stage-c-sim.mjs` | Stage C 활성화 forecasting (외부 학습자 1명 mix) |
+| `dogfood-4-exploration.mjs` | exploration target Fisher Info simulator (P-1 W9 prep) |
+| `dogfood-5-adaptive.mjs` | shouldExplore policy long-run (R5 finding source) |
+| `dogfood-6-adaptive-threshold.mjs` | adaptive `max(20, mean × 0.3)` 검증 (R5 fix, balance 0.030→0.303) |
+| `check-cross-repo-links.mjs` | myprojects 크로스 레포 링크 raw HEAD 검증 |
 
 ---
 
@@ -188,7 +192,7 @@ node scripts/calibrate.mjs --responses data/dogfood.json --min 100 --lambda 1.0 
 
 ---
 
-## 9. 진행 상황 종합 (2026-05-23 v3 sprint 종료)
+## 9. 진행 상황 종합 (2026-05-24 v4 sprint 종료)
 
 | Phase | 진행 |
 |---|---|
@@ -209,12 +213,40 @@ node scripts/calibrate.mjs --responses data/dogfood.json --min 100 --lambda 1.0 
 | **λ schedule (auto-lambda)** | N-dependent (N<100→2.0, ..., >10k→0.5) |
 | **C4.3 trend infra** | scaffolded (10 unit tests, UI 통합 대기) |
 | **Stage C 활성화 forecasting** | 외부 1명만으론 게이트 FAIL 지속, 50% 비율 시 PASS 가능성 forecast |
+| **v4: exploration target (P-1 W9)** | `findExplorationTarget` Fisher Info — dogfood-4로 검증 |
+| **v4: shouldExplore policy** | balance-aware (b<0.1: every 2nd, b<0.5: every 4th) + R5 long-run 발견 |
+| **v4: R5 fix — adaptive threshold** | `max(20, mean × 0.3)` — dogfood-6로 balance 10배 회복 검증 (0.030→0.303) |
+| **v4: closed-loop iterations** | **5 cycle 누적** (Tier 1-3 → λ schedule → exploration → adaptive prep → adaptive verification) |
+| **v4: analytics events 인프라** | `lib/analytics-events.ts` (11 types) + AnalyticsQueuePanel (`/sessions`) — Supabase config 대기 |
 
 상세:
-- 통합 회고: [`docs/04-report/oelp-integrated-summary.md`](https://github.com/smilepat/myprojects/blob/main/docs/04-report/oelp-integrated-summary.md) v3
+- 통합 회고: [`docs/04-report/oelp-integrated-summary.md`](https://github.com/smilepat/myprojects/blob/main/docs/04-report/oelp-integrated-summary.md) v4
 - Stability sprint: [`docs/04-report/stability-roadmap-tier-1-3-complete.md`](https://github.com/smilepat/myprojects/blob/main/docs/04-report/stability-roadmap-tier-1-3-complete.md)
 - Phase 2 PRD: [`docs/01-plan/prd-oelp-mvp-phase2.md`](https://github.com/smilepat/myprojects/blob/main/docs/01-plan/prd-oelp-mvp-phase2.md)
 - C4.1 게이트 3 cycle: [`docs/03-analysis/dogfooding-pass-{1,2,3}.md`](https://github.com/smilepat/myprojects/tree/main/docs/03-analysis)
+- **v4 exploration policy analysis**: [`docs/03-analysis/exploration-policy-long-run-analysis.md`](https://github.com/smilepat/myprojects/blob/main/docs/03-analysis/exploration-policy-long-run-analysis.md)
+- **v4 adaptive threshold verification**: [`docs/03-analysis/adaptive-threshold-verification.md`](https://github.com/smilepat/myprojects/blob/main/docs/03-analysis/adaptive-threshold-verification.md)
+
+---
+
+## 9.5. Analytics 이벤트 인프라 (v4)
+
+localStorage 큐에 **11개 이벤트 타입**을 누적, Supabase config 도착 시 자동 sync 예정.
+
+| 카테고리 | 이벤트 | 발화 시점 |
+|---|---|---|
+| auth | `auth.signed_up` / `auth.signed_in` | 로그인 wiring 시 (현재 stub) |
+| diag | `diag.started` / `diag.item_answered` / `diag.completed` | AdaptiveDiagnostic 시작 / 응답 / 완료 |
+| map | `map.viewed` / `map.node_clicked` | `/map` 진입 / 노드 클릭 (TYPE/DIST/keyVar) |
+| queue | `queue.started` / `queue.item_answered` / `queue.completed` | `/queue` 시작 / 카드 답변 / 평가 제출 |
+| calibration | `calibration.attempted` | promote-weights 시도 시 |
+
+운영 위젯: `/sessions` → **AnalyticsQueuePanel** (총 이벤트 / 세션 / 타입 분포 / JSON 다운로드).
+
+Supabase config 도착 시:
+1. `lib/analytics-events.ts`의 stub flush를 실제 insert로 교체
+2. AnalyticsQueuePanel에 "X events pending sync" + flush button 추가
+3. weekly cron이 events → responses 변환 (`sync-responses-from-supabase.mjs` 재사용)
 
 ---
 
@@ -225,6 +257,8 @@ node scripts/calibrate.mjs --responses data/dogfood.json --min 100 --lambda 1.0 
 - A8 `/diagnose` vocab-cat-test 통계 위젯
 - regression-history 검색/필터 (events 8건+ 누적 후)
 - error-log mock test 추가로 coverage → 100%
+- **v4: AdaptiveQueuePanel v2** — Supabase 연결 시 sync 카운터/버튼
+- **v4: queue.item_answered wiring** — `/queue` 카드 답변 즉시 logEvent
 
 ### Stage B — 본인 1-2시간 결단
 - ☐ Cloud Run vocab-cat-test 배포 ([runbook](https://github.com/smilepat/myprojects/blob/main/docs/03-analysis/vocab-cat-test-cloudrun-runbook.md))
@@ -275,3 +309,10 @@ node scripts/calibrate.mjs --responses data/dogfood.json --min 100 --lambda 1.0 
 - 2026-05-23 v3 sprint: **λ schedule (auto-lambda)** N-dependent + C4.3 trend-analysis 인프라 (scaffolded)
 - 2026-05-23 v3 sprint: **Stage C 활성화 forecasting** (외부 1명 simulation) + Phase 2 PRD 정식화
 - 2026-05-23 v3 sprint: OELP + myprojects **CLAUDE.md** 정비 (작업 컨티뉴이티 기반)
+- 2026-05-24 v4 sprint: **P-1 W9 exploration target** (`findExplorationTarget` Fisher Info) — dogfood-4 검증
+- 2026-05-24 v4 sprint: **shouldExplore balance-aware policy** + buildQueueV3 `useExploration` 통합 (`/queue` 자동 적용)
+- 2026-05-24 v4 sprint: **R5 long-run 발견** — dogfood-5 (500 sess) balance 0.030 악화 → exploration-policy-long-run-analysis.md
+- 2026-05-24 v4 sprint: **R5 fix — adaptive threshold** `max(20, mean × 0.3)` — dogfood-6 balance 0.030→0.303 (10x 회복) 검증
+- 2026-05-24 v4 sprint: **analytics events 인프라** (lib/analytics-events.ts 11 types, /diagnose /queue /map /AdaptiveDiagnostic wired)
+- 2026-05-24 v4 sprint: **AnalyticsQueuePanel** /sessions 위젯 (Supabase config 시 flush button으로 진화 예정)
+- 2026-05-24 v4 sprint: **5 closed-loop iteration 누적** (Tier 1-3 → λ schedule → exploration target → adaptive prep → adaptive verification)
