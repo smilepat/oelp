@@ -25,6 +25,12 @@ const FEATURES = [
     body: "완료된 세션 + W8 평가 누적. Calibration JSON 내보내기.",
     status: "phase 1.5",
   },
+  {
+    href: "/regression-history",
+    title: "Regression History (Safety Net Audit)",
+    body: "C4.1 게이트 통과·롤백 이력. 가중치 변경이 어떻게 검증되고 거부되는지.",
+    status: "audit",
+  },
 ];
 
 export default function Home() {
