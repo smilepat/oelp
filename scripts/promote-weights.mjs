@@ -40,6 +40,29 @@ import { dirname, join } from "node:path";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, "..");
 const WEIGHTS_PATH = join(ROOT, "lib", "ontology-weights.json");
+const REGRESSION_HISTORY_PATH = join(ROOT, "lib", "regression-history.json");
+
+/**
+ * Append a regression-history event. Safe across runs: no-op if the
+ * history file doesn't exist (older checkouts) or already contains the
+ * same id. The /regression-history UI reads this file directly, so this
+ * is the link that makes the audit page self-updating.
+ */
+function appendRegressionHistoryEvent(event) {
+  if (!existsSync(REGRESSION_HISTORY_PATH)) return false;
+  try {
+    const raw = readFileSync(REGRESSION_HISTORY_PATH, "utf-8");
+    const data = JSON.parse(raw);
+    if (!Array.isArray(data.events)) return false;
+    if (data.events.some((e) => e.id === event.id)) return false;
+    data.events.push(event);
+    writeFileSync(REGRESSION_HISTORY_PATH, JSON.stringify(data, null, 2) + "\n");
+    return true;
+  } catch (err) {
+    console.warn(`Warning: failed to update regression-history.json: ${err.message}`);
+    return false;
+  }
+}
 
 const args = parseArgs(process.argv.slice(2));
 
@@ -186,8 +209,9 @@ if (tau < minTau || contradictions > maxContradictions) {
   restore();
   // Write failure marker for cron / PR
   const failPath = join(ROOT, "out", "promote-weights-fail.json");
+  const failedAt = new Date().toISOString();
   writeFileSync(failPath, JSON.stringify({
-    failedAt: new Date().toISOString(),
+    failedAt,
     tau,
     contradictions,
     gateMinTau: minTau,
@@ -196,6 +220,26 @@ if (tau < minTau || contradictions > maxContradictions) {
     attemptedChanges: calibratedQTs,
   }, null, 2));
   console.error(`Failure report: ${failPath}`);
+
+  const appended = appendRegressionHistoryEvent({
+    id: nextVersion,
+    occurredAt: failedAt,
+    kind: "auto-promote",
+    result: "fail",
+    version: nextVersion,
+    previousVersion,
+    trigger: reason,
+    tau,
+    contradictions,
+    attemptedChanges: calibratedQTs,
+    summary: `${calibratedQTs.length} QT 변경 시도 → tau ${tau.toFixed(2)}, 모순 ${contradictions}건 검출 → 자동 롤백`,
+    lesson:
+      contradictions > maxContradictions
+        ? "도메인 keyVariable mapping과 충돌 → calibration 결과 거부"
+        : `Kendall tau ${tau.toFixed(2)} < ${minTau} → 학습자 능력 순위 보존 실패`,
+  });
+  if (appended) console.error(`Appended to lib/regression-history.json (id=${nextVersion})`);
+
   process.exit(1);
 }
 
@@ -205,14 +249,31 @@ if (!existsSync(join(ROOT, "out"))) {
   // ensure out/ dir exists
   spawnSync("mkdir", ["-p", join(ROOT, "out")]);
 }
+const promotedAt = new Date().toISOString();
 writeFileSync(successPath, JSON.stringify({
-  promotedAt: new Date().toISOString(),
+  promotedAt,
   version: nextVersion,
   previousVersion,
   changedQTs: calibratedQTs,
   tau,
   contradictions,
 }, null, 2));
+
+const appended = appendRegressionHistoryEvent({
+  id: nextVersion,
+  occurredAt: promotedAt,
+  kind: "auto-promote",
+  result: "pass",
+  version: nextVersion,
+  previousVersion,
+  trigger: reason,
+  tau,
+  contradictions,
+  changedQTs: calibratedQTs,
+  summary: `${calibratedQTs.length} QT 가중치 자동 승격 — tau ${tau.toFixed(2)}, 모순 ${contradictions}건`,
+  lesson: "calibration 결과가 도메인 모순 게이트를 통과 → 가중치 적용",
+});
+if (appended) console.log(`Appended to lib/regression-history.json (id=${nextVersion})`);
 
 function restore() {
   writeFileSync(WEIGHTS_PATH, beforeRaw);

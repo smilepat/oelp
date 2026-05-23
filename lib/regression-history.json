@@ -23,7 +23,13 @@
       "trigger": "C4.1 v1 5건 모순 해소 작업",
       "tau": 0.6,
       "contradictions": 0,
-      "changedQTs": ["TYPE-목적", "TYPE-심경", "TYPE-주장", "TYPE-요지", "TYPE-제목"],
+      "changedQTs": [
+        "TYPE-목적",
+        "TYPE-심경",
+        "TYPE-주장",
+        "TYPE-요지",
+        "TYPE-제목"
+      ],
       "summary": "5개 QT 행을 도메인 증거 기반으로 재조정 → tau 0.6, 모순 0",
       "lesson": "수동 조정도 게이트로 검증 가능 — 게이트의 출처 무관성"
     },
@@ -37,7 +43,12 @@
       "trigger": "scripts/calibrate.mjs --apply (synthetic responses)",
       "tau": 0.6,
       "contradictions": 0,
-      "changedQTs": ["TYPE-주장", "TYPE-요지", "TYPE-제목", "TYPE-순서배열"],
+      "changedQTs": [
+        "TYPE-주장",
+        "TYPE-요지",
+        "TYPE-제목",
+        "TYPE-순서배열"
+      ],
       "summary": "합성 응답 기반 ridge 회귀 결과 자동 승격 — 게이트 통과",
       "lesson": "이 promote는 dogfooding-1/2 이전의 검증용. 후속 검증에서 rollback될 수 있음을 명시 (시퀀스 학습)",
       "note": "이후 dogfooding-1에서 동일 가중치에 대한 over-declared 검출 → v2 복원"
@@ -50,7 +61,9 @@
       "trigger": "본인 실측 30 응답 → calibrate.mjs --apply",
       "tau": 0.5,
       "contradictions": 1,
-      "attemptedChanges": ["TYPE-흐름무관"],
+      "attemptedChanges": [
+        "TYPE-흐름무관"
+      ],
       "summary": "TYPE-흐름무관에서 D2_Meaning 15%→20% 시도 → keyVariables 증거 없음 (derived 0%) → 모순 검출",
       "lesson": "rank-1 X 데이터에도 게이트가 declared-derived 불일치 검출 — calibrate-quality 무관 안전망",
       "reportPath": "docs/03-analysis/dogfooding-pass-1.md"
@@ -64,7 +77,12 @@
       "trigger": "real 30 + synthetic 1200 결합 → calibrate.mjs --apply",
       "tau": 0.5,
       "contradictions": 1,
-      "attemptedChanges": ["TYPE-주장", "TYPE-요지", "TYPE-제목", "TYPE-순서배열"],
+      "attemptedChanges": [
+        "TYPE-주장",
+        "TYPE-요지",
+        "TYPE-제목",
+        "TYPE-순서배열"
+      ],
       "summary": "TYPE-순서배열 D3_Context 45%→3% 시도 → derived 33%인데 declared <5% → under-declared 모순",
       "lesson": "Pass-1 (over-declared)과 반대 종류의 모순도 동일 게이트가 검출 → 안전망의 일반성 입증",
       "reportPath": "docs/03-analysis/dogfooding-pass-2.md"

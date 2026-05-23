@@ -59,4 +59,11 @@ describe("regression-history (Safety Net Audit)", () => {
       // No assertion on fail — sometimes no changes attempted, sometimes attempted+rejected
     }
   });
+
+  test("T6: Event ids are unique (auto-append idempotency contract)", () => {
+    const events = getRegressionEvents();
+    const ids = events.map((e) => e.id);
+    const unique = new Set(ids);
+    expect(unique.size).toBe(ids.length);
+  });
 });
