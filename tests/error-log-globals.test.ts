@@ -75,20 +75,11 @@ describe("error-log global handlers (A7++)", () => {
 
   test("T5: unhandledrejection with Error reason", () => {
     installGlobalErrorHandlers();
-    // PromiseRejectionEvent constructor not always available in jsdom — fallback
-    let event: Event;
-    try {
-      event = new PromiseRejectionEvent("unhandledrejection", {
-        promise: Promise.reject(new Error("rejected")),
-        reason: new Error("rejected"),
-      });
-    } catch {
-      event = new Event("unhandledrejection");
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (event as any).reason = new Error("rejected");
-    }
-    // Suppress jsdom uncaught rejection
-    window.addEventListener("unhandledrejection", (e) => e.preventDefault(), { once: true });
+    // Synthetic event — avoid using a real rejected Promise (would surface
+    // as an actual unhandled rejection in test runner).
+    const event = new Event("unhandledrejection");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (event as any).reason = new Error("rejected");
     window.dispatchEvent(event);
     const log = readErrorLog();
     expect(log.length).toBeGreaterThan(0);

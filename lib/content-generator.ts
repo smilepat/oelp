@@ -107,7 +107,6 @@ export class EBSCriteriaEngineGenerator implements ContentGenerator {
   ) {}
 
   async generate(ctx: ContentGeneratorContext): Promise<ContentGeneratorResult> {
-    void ctx; // referenced for future implementation
     if (!this.endpoint) {
       return {
         cards: [],
@@ -123,23 +122,78 @@ export class EBSCriteriaEngineGenerator implements ContentGenerator {
       };
     }
 
-    // TODO (W3-W4): wire to EBS-demo's synthesize API
-    // 1. POST { qtId, targetDimensions, difficultyRange, count } to {endpoint}/api/generate
-    // 2. Parse response into VocabCard[] shape
-    // 3. Apply EBS-demo's 12-rule item-validator (W6)
-    // 4. Apply OELP's 9 validators via filterValidCards
-    // 5. Return validated cards + accumulated issues
+    // Wire to EBS-demo's synthesize API.
+    // POST { qtId, targetDimensions, difficultyRange, count } → VocabCard[].
+    // Validators (T1.3 + content-validators V1-V12) applied to filter out
+    // malformed LLM output — only valid cards reach the queue.
+    let rawCards: VocabCard[];
+    const aggregatedIssues: ValidatorIssue[] = [];
+    try {
+      const res = await fetch(`${this.endpoint}/api/generate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          qtId: ctx.qtId,
+          targetDimensions: ctx.targetDimensions,
+          difficultyRange: ctx.difficultyRange,
+          count: ctx.count,
+          excludeItemIds: ctx.excludeItemIds ?? [],
+        }),
+      });
+      if (!res.ok) {
+        return {
+          cards: [],
+          generator: this.name,
+          issues: [
+            {
+              cardIndex: -1,
+              code: "EBS_HTTP_ERROR",
+              message: `EBS /api/generate → ${res.status} ${res.statusText}`,
+              severity: "error",
+            },
+          ],
+        };
+      }
+      const body = await res.json();
+      if (!body || !Array.isArray(body.cards)) {
+        return {
+          cards: [],
+          generator: this.name,
+          issues: [
+            {
+              cardIndex: -1,
+              code: "EBS_MALFORMED_RESPONSE",
+              message: "EBS /api/generate: response body missing 'cards' array",
+              severity: "error",
+            },
+          ],
+        };
+      }
+      rawCards = body.cards as VocabCard[];
+    } catch (err) {
+      return {
+        cards: [],
+        generator: this.name,
+        issues: [
+          {
+            cardIndex: -1,
+            code: "EBS_FETCH_FAILED",
+            message: `EBSCriteriaEngineGenerator fetch error: ${
+              err instanceof Error ? err.message : String(err)
+            }`,
+            severity: "error",
+          },
+        ],
+      };
+    }
+
+    // Filter — drops cards with error-severity validator issues, keeps warnings.
+    const { validCards, issues } = filterValidCards(rawCards);
+    aggregatedIssues.push(...issues);
     return {
-      cards: [],
+      cards: validCards.slice(0, ctx.count),
       generator: this.name,
-      issues: [
-        {
-          cardIndex: -1,
-          code: "EBS_INTEGRATION_PENDING",
-          message: "EBSCriteriaEngineGenerator: integration pending W3 (Firebase config + REST wiring)",
-          severity: "error",
-        },
-      ],
+      issues: aggregatedIssues,
     };
   }
 }

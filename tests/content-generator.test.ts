@@ -80,11 +80,22 @@ describe("EBSCriteriaEngineGenerator (P-2 stub)", () => {
     expect(result.issues.some((i) => i.code === "EBS_NOT_CONFIGURED")).toBe(true);
   });
 
-  test("T3: With endpoint → EBS_INTEGRATION_PENDING error (stub)", async () => {
-    const g = new EBSCriteriaEngineGenerator("https://example.com");
-    const result = await g.generate(BASE_CTX);
-    expect(result.cards).toEqual([]);
-    expect(result.issues.some((i) => i.code === "EBS_INTEGRATION_PENDING")).toBe(true);
+  test("T3: With endpoint + unreachable host → EBS_FETCH_FAILED (activated)", async () => {
+    // Was a stub returning EBS_INTEGRATION_PENDING. Now real wiring (see
+    // tests/ebs-generator.test.ts for full mock coverage); without a live
+    // backend, fetch throws → EBS_FETCH_FAILED.
+    const origFetch = global.fetch;
+    global.fetch = (async () => {
+      throw new TypeError("fetch failed");
+    }) as typeof fetch;
+    try {
+      const g = new EBSCriteriaEngineGenerator("https://nonexistent.invalid");
+      const result = await g.generate(BASE_CTX);
+      expect(result.cards).toEqual([]);
+      expect(result.issues.some((i) => i.code === "EBS_FETCH_FAILED")).toBe(true);
+    } finally {
+      global.fetch = origFetch;
+    }
   });
 });
 
