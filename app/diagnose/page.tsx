@@ -14,6 +14,7 @@ import {
   getActiveDiagnosticInfo,
 } from "@/lib/active-diagnostic";
 import { DIAGNOSTIC_PRESETS, type DiagnosticPreset } from "@/lib/diagnostic-presets";
+import { AdaptiveDiagnostic } from "@/components/AdaptiveDiagnostic";
 
 export default function DiagnosePage() {
   const [result, setResult] = useState<DiagnosticInput | null>(null);
@@ -175,6 +176,14 @@ export default function DiagnosePage() {
           </button>
         </div>
       </section>
+
+      <AdaptiveDiagnostic
+        onComplete={(d) => {
+          setResult(d);
+          setActiveDiagnostic(d);
+          setActive({ name: d.studentName, setAt: new Date().toISOString() });
+        }}
+      />
 
       <section className="flex flex-col gap-2 rounded-md border border-zinc-200 p-4 dark:border-zinc-800">
         <p className="text-xs uppercase tracking-wider text-zinc-500">

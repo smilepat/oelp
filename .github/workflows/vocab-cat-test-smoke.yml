@@ -1,0 +1,96 @@
+name: vocab-cat-test Integration Smoke
+
+# Weekly smoke test of vocab-cat-test ↔ OELP integration handshake.
+# Spawns the FastAPI backend in CI, runs the full multi-step adaptive CAT
+# flow via verify-vocab-cat-test.mjs, asserts:
+#   - /health responsive
+#   - /api/v1/test/start + /respond + /results
+#   - 5D dimensionScores returned (catches vocab-cat-test regression on PR #1)
+#   - T1.3 DiagnosticInput schema validation
+#
+# Triggers:
+#   - Sunday 03:00 UTC (12:00 KST) — separate from weekly-calibration
+#   - workflow_dispatch — manual trigger
+#   - push to main if integration deps change
+
+on:
+  schedule:
+    - cron: "0 3 * * 0"
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/verify-vocab-cat-test.mjs"
+      - "schemas/diagnostic-input.schema.json"
+      - ".github/workflows/vocab-cat-test-smoke.yml"
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout OELP
+        uses: actions/checkout@v4
+
+      - name: Checkout vocab-cat-test (sibling)
+        uses: actions/checkout@v4
+        with:
+          repository: smilepat/vocab-cat-test
+          path: vocab-cat-test
+          # Default branch (main) — picks up PR #1 dimension_scores fix.
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install OELP deps
+        run: npm ci
+
+      - name: Install vocab-cat-test deps
+        working-directory: vocab-cat-test/irt_cat_engine
+        run: pip install -r requirements.txt
+
+      - name: Initialize vocab-cat-test DB
+        working-directory: vocab-cat-test
+        run: python -c "import sys; sys.path.insert(0, '.'); from irt_cat_engine.data.database import init_db; init_db()"
+
+      - name: Start vocab-cat-test backend
+        working-directory: vocab-cat-test
+        env:
+          ALLOWED_ORIGINS: "http://localhost:3000,http://localhost:3001"
+        run: |
+          nohup uvicorn irt_cat_engine.api.main:app --port 8000 > uvicorn.log 2>&1 &
+          for i in 1 2 3 4 5 6 7 8 9 10; do
+            if curl -fs http://localhost:8000/health > /dev/null 2>&1; then
+              echo "Backend ready after ${i}s"
+              break
+            fi
+            sleep 2
+          done
+          curl -fs http://localhost:8000/health | head -1
+
+      - name: Run integration verify (alternating responses)
+        env:
+          VOCAB_CAT_TEST_URL: http://localhost:8000
+        run: node scripts/verify-vocab-cat-test.mjs
+
+      - name: Run integration verify (always-correct, C1.2 stability proxy)
+        env:
+          VOCAB_CAT_TEST_URL: http://localhost:8000
+          RESPONSE_STRATEGY: always-correct
+        run: node scripts/verify-vocab-cat-test.mjs
+
+      - name: Upload vocab-cat-test log on failure
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: vocab-cat-test-uvicorn-log
+          path: vocab-cat-test/uvicorn.log
