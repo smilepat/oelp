@@ -1,0 +1,72 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/smilepat/oelp/schemas/diagnostic-input.schema.json",
+  "title": "DiagnosticInput",
+  "description": "level-test-pat ↔ OELP 호환 contract. Mirrors lib/diagnostic.ts and vocab-learn-pat/src/types/diagnostic.ts. Any breaking change here cascades to /diagnose paste-import and the URL ?result=... path.",
+  "type": "object",
+  "required": [
+    "studentName",
+    "theta",
+    "level",
+    "cefr",
+    "dimensionScores",
+    "weakDim",
+    "strongDim",
+    "timestamp"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "studentName": {
+      "type": "string",
+      "minLength": 1
+    },
+    "theta": {
+      "type": "number",
+      "minimum": -4.0,
+      "maximum": 4.0
+    },
+    "level": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 6
+    },
+    "cefr": {
+      "type": "string",
+      "enum": ["A1", "A2", "B1", "B2", "C1", "C2"]
+    },
+    "dimensionScores": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "D1_Form":    { "type": "number", "minimum": 0, "maximum": 100 },
+        "D2_Meaning": { "type": "number", "minimum": 0, "maximum": 100 },
+        "D3_Context": { "type": "number", "minimum": 0, "maximum": 100 },
+        "D4_Network": { "type": "number", "minimum": 0, "maximum": 100 },
+        "D5_Usage":   { "type": "number", "minimum": 0, "maximum": 100 }
+      }
+    },
+    "weakDim": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["D1_Form", "D2_Meaning", "D3_Context", "D4_Network", "D5_Usage"]
+      },
+      "uniqueItems": true
+    },
+    "strongDim": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["D1_Form", "D2_Meaning", "D3_Context", "D4_Network", "D5_Usage"]
+      },
+      "uniqueItems": true
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "source": {
+      "type": "string"
+    }
+  }
+}
