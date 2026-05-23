@@ -1,0 +1,114 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/smilepat/oelp/schemas/regression-history.schema.json",
+  "title": "Regression History",
+  "description": "Auditable record of C4.1 regression gate events. Consumed by /regression-history UI and appended to by scripts/promote-weights.mjs.",
+  "type": "object",
+  "required": ["schemaVersion", "events"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "type": "integer",
+      "const": 1
+    },
+    "description": {
+      "type": "string"
+    },
+    "events": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/event" }
+    }
+  },
+  "$defs": {
+    "event": {
+      "type": "object",
+      "required": [
+        "id",
+        "occurredAt",
+        "kind",
+        "result",
+        "trigger",
+        "tau",
+        "contradictions",
+        "summary",
+        "lesson"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Globally unique. Auto-promote events use the version slug; manual events use a descriptive slug."
+        },
+        "occurredAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "kind": {
+          "type": "string",
+          "enum": ["initial", "manual-calibration", "auto-promote"]
+        },
+        "result": {
+          "type": "string",
+          "enum": ["pass", "fail"]
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "previousVersion": {
+          "type": "string",
+          "minLength": 1
+        },
+        "trigger": {
+          "type": "string",
+          "minLength": 1
+        },
+        "tau": {
+          "type": "number",
+          "minimum": -1,
+          "maximum": 1
+        },
+        "contradictions": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "changedQTs": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1
+        },
+        "attemptedChanges": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 10
+        },
+        "lesson": {
+          "type": "string",
+          "minLength": 10
+        },
+        "reportPath": {
+          "type": "string",
+          "pattern": "^docs/.+\\.md$"
+        },
+        "note": {
+          "type": "string"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "result": { "const": "pass" }, "kind": { "not": { "const": "initial" } } }
+          },
+          "then": {
+            "required": ["changedQTs"]
+          }
+        }
+      ]
+    }
+  }
+}

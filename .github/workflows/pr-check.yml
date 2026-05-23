@@ -30,8 +30,11 @@ jobs:
       - name: ESLint
         run: npm run lint
 
-      - name: Vitest (39 unit tests)
+      - name: Vitest unit tests
         run: npm test
+
+      - name: JSON Schema validation (T1.1)
+        run: node scripts/validate-schemas.mjs
 
       - name: C4.1 dimension-mapping regression
         run: |
