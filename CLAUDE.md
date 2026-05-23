@@ -128,15 +128,17 @@ vocab-cat-test (semantic/contextual/form/relational/pragmatic) ↔ OELP (D2/D3/D
 
 ## 6. CI 강제 조건 (PR Block 사유)
 
-순서대로:
+순서대로 (10 stages):
 1. `npm run lint` (ESLint, 0 errors)
-2. `npm test` (Vitest 249 pass)
-3. `node scripts/validate-schemas.mjs` (3 JSON schemas)
-4. `node scripts/update-readme-counters.mjs --check` (README drift 0)
-5. `node scripts/synthetic-validation-c4-1.mjs` (Kendall tau ≥ 0.4, contradictions = 0)
-6. `node scripts/c4-2-diversity.mjs` (Jaccard non-blocking)
-7. `npm run build` (Next.js build success)
-8. `npm run test:coverage` (lines ≥ 93, branches ≥ 80, funcs ≥ 95, stmts ≥ 90)
+2. `npm test` (Vitest 305 pass)
+3. `npm run test:coverage` (lines ≥ 93, branches ≥ 80, funcs ≥ 95, stmts ≥ 90)
+4. `node scripts/validate-schemas.mjs` (3 JSON schemas)
+5. `node scripts/update-readme-counters.mjs --check` (README drift 0)
+6. `node scripts/synthetic-validation-c4-1.mjs` (Kendall tau ≥ 0.4, contradictions = 0)
+7. `node scripts/c4-2-diversity.mjs` (Jaccard non-blocking)
+8. `npm run build` (Next.js build success)
+9. A11y e2e (axe-core, 6 routes × 2 viewports = 12 WCAG 2.1 AA)
+10. `node scripts/check-cross-repo-links.mjs` (smilepat/* /blob/ URLs 404 ≤ 0)
 
 하나라도 fail이면 PR merge 차단.
 
@@ -155,11 +157,17 @@ vocab-cat-test (semantic/contextual/form/relational/pragmatic) ↔ OELP (D2/D3/D
 | 5D × QT 매핑 | `01-plan/dimension-mapping.md` |
 | 백로그 | `01-plan/phase2-backlog.md` + `phase2-backlog-v2.md` |
 | C4.1 v2 weights | `03-analysis/synthetic-validation-c4-1-v2.md` |
-| dogfooding 3 cycles | `03-analysis/dogfooding-pass-{1,2,3}.md` |
+| dogfooding 5 cycles | `03-analysis/dogfooding-pass-{1,2,3,4}.md` + `exploration-policy-long-run-analysis.md` |
+| D5 root cause | `03-analysis/d5-bias-root-cause-analysis.md` |
 | vocab-cat-test 통합 | `03-analysis/vocab-cat-test-integration-resolved.md` (+ Cloud Run runbook) |
 | Vercel 배포 | `03-analysis/vercel-deployment-runbook.md` |
-| 통합 회고 | `04-report/oelp-integrated-summary.md` v3 |
-| Stability sprint | `04-report/stability-roadmap-tier-1-3-complete.md` |
+| 통합 회고 | `04-report/oelp-integrated-summary.md` v4 |
+| Stability sprint | `04-report/stability-roadmap-tier-1-3-complete.md` + `stability-roadmap-v2.md` |
+| Phase 2 PRD | `01-plan/prd-oelp-mvp-phase2.md` + `phase2-backlog-v2.md` |
+| W9 exploration | `02-design/phase2-p1-recommendation-w9-exploration.md` |
+| Stage C forecast | `03-analysis/stage-c-activation-simulation.md` |
+| Phase 2 chunk template | `04-report/_template-phase2-chunk-end.md` |
+| Docs INDEX (auto) | `docs/INDEX.md` |
 
 ## 9. 본인이 해야 할 (Claude 자율 불가) 잔여
 
@@ -169,17 +177,38 @@ vocab-cat-test (semantic/contextual/form/relational/pragmatic) ↔ OELP (D2/D3/D
 4. ☐ 학습자 채널 ≥ 1명 확보 (Stage C 활성화)
 5. ☐ 본인 dogfooding-3+ 진행 (preset UI 사용 후 calibration)
 
-## 10. Sprint 작업 시 권장 순서 (개발 흐름 친화)
+## 10. Sprint 작업 시 권장 순서 (5 dogfooding cycles 학습 기반)
 
+### 10.1 일반 작업 순서
 1. 깨질 위험이 있는 부분 → tests 먼저 (vitest + e2e)
 2. Schema 변경 → schemas/*.json + AJV validate + Vitest negative cases
 3. 새 lib module → coverage 그대로 유지 (95%+) 또는 tests 동시 추가
 4. 새 route → A11y suite에 자동 포함 (e2e/a11y.spec.ts ROUTES 추가)
-5. README 카운터 갱신 → 자동 (`npm run test:coverage` 후 commit 시)
-6. PR 전 `npm run ci` 시뮬레이션
+5. 새 cross-repo URL → check-cross-repo-links.mjs CI gate 자동 검증
+6. 새 myprojects 문서 → INDEX.md 자동 (myprojects CI gate)
+7. README 카운터 갱신 → 자동 (`npm run test:coverage` 후 commit 시)
+8. PR 전 `npm run ci` 시뮬레이션
+
+### 10.2 발견 → 코드 → 검증 → 정책 패턴 (4 closed-loops 적용)
+시뮬레이션이나 실측에서 새 finding 발견 시:
+1. **발견 명시**: docs/03-analysis/{finding-name}.md 작성 (정량 데이터 포함)
+2. **PRD 등록**: prd-oelp-mvp-phase2.md §5 R{N} 추가 (severity + 검증 방법)
+3. **코드 prep**: lib에 helper 추가 + `off` default (외부 데이터 도착 시 활성)
+4. **테스트**: positive + negative + boundary 케이스
+5. **시뮬레이터 검증**: dogfood-N+1 시나리오 작성 (재현성 위해 seeded)
+
+→ Tier 1-3 / λ schedule / exploration / adaptive threshold (R5) 4건 이 패턴 따름.
+
+### 10.3 dogfooding cycle 진행 체크리스트
+- 본인/외부 학습자 응답 누적 → /sessions calibration JSON export
+- `node scripts/calibrate.mjs --responses <path> --auto-lambda --min 100 --out out/preview.json` (dry-run)
+- `node scripts/promote-weights.mjs --calibration out/preview.json --dry-run` (변경 검토)
+- `node scripts/promote-weights.mjs --calibration out/preview.json --reason "..."` (apply, C4.1 게이트 + auto-rollback + regression-history auto-append)
+- 결과 → docs/03-analysis/dogfooding-pass-{N}.md
 
 ## 11. 변경 이력
 
 - 2026-05-23 v1: 초기 (Phase 1 + P-1 + P-1.5 + P-2 완료)
 - 2026-05-23 v2: Tier 1-4 stability + Vercel 배포 + vocab-cat-test 통합
 - 2026-05-23 v3: dogfooding-3 + λ schedule + C4.3 scaffolding + 본 CLAUDE.md 정비
+- 2026-05-24 v4: 5 dogfooding cycles + W9 exploration + R5 long-run + CI 10 gates + §10 closed-loop 패턴 명시
