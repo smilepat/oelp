@@ -294,3 +294,25 @@ export function posteriorBalance(posteriors: Record<string, BetaPosterior>): num
   const min = Math.min(...samples);
   return min / mean;
 }
+
+/**
+ * Adaptive exploration policy — given current posterior balance + session
+ * count, decide whether the NEXT queue should use exploration target.
+ *
+ * Policy (mirrors design doc §2.2):
+ *   - balance < 0.1 (severe starvation) → every 2nd session use exploration
+ *   - balance < 0.5 (mild starvation)   → every 4th session
+ *   - balance ≥ 0.5 (well-balanced)     → exploration off (Thompson sufficient)
+ *
+ * `sessionNumber` is the 1-based index of the upcoming session. Caller
+ * should increment monotonically across user's history.
+ */
+export function shouldExplore(
+  balance: number,
+  sessionNumber: number
+): boolean {
+  if (sessionNumber < 1) return false;
+  if (balance < 0.1) return sessionNumber % 2 === 0;
+  if (balance < 0.5) return sessionNumber % 4 === 0;
+  return false;
+}

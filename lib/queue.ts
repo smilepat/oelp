@@ -132,7 +132,7 @@ export function dimensionsInQueue(cards: VocabCard[]): VocabDimension[] {
 // ─── V2: Thompson sampling integration (P-1 W3) ────────────────────
 
 import type { BetaPosterior, ConfidenceLevel } from "./recommendation";
-import { recommendQuestionType } from "./recommendation";
+import { recommendQuestionType, findExplorationTarget } from "./recommendation";
 
 export interface QueuePlanV2 extends QueuePlan {
   /** Confidence in the target QT selection */
@@ -228,6 +228,23 @@ export interface QueuePlanV3 extends QueuePlanV2 {
   generator: string;
   /** Validation issues encountered during generation (errors filtered out) */
   generatorIssues: ValidatorIssue[];
+  /**
+   * "exploration" if useExploration option overrode primary target.
+   * "primary" otherwise. UI uses this to badge the queue source.
+   */
+  selectionMode?: "primary" | "exploration";
+}
+
+export interface QueueV3Opts extends QueueOpts {
+  /**
+   * Override primary target with exploration target (least-known QT).
+   * When true and exploration target exists, queue uses that QT instead.
+   * Falls back to primary if no exploration target available.
+   *
+   * Phase 2 P-1 W9: adaptive frequency policy lives in caller — this is
+   * a binary toggle. See docs/02-design/phase2-p1-recommendation-w9-exploration.md
+   */
+  useExploration?: boolean;
 }
 
 /**
@@ -238,19 +255,36 @@ export interface QueuePlanV3 extends QueuePlanV2 {
  *
  * Async because EBS-demo path involves a REST call. LocalPoolGenerator path
  * still resolves synchronously (just wrapped in Promise.resolve).
+ *
+ * When opts.useExploration is true and findExplorationTarget returns a
+ * non-null candidate, that QT replaces the primary target. The selectionMode
+ * field tells callers whether exploration was actually used.
  */
 export async function buildQueueV3(
   diag: DiagnosticInput,
   posteriors: Record<string, BetaPosterior>,
   generator: ContentGenerator,
-  opts: QueueOpts = {}
+  opts: QueueV3Opts = {}
 ): Promise<QueuePlanV3> {
   const sessionSize = opts.sessionSize ?? 10;
   const halfWidth = opts.difficultyHalfWidth ?? 0.4;
 
-  // 1. Thompson recommendation
+  // 1. Thompson recommendation (primary)
   const rec = recommendQuestionType(diag.dimensionScores, posteriors);
-  const target = rec.targetQuestionType;
+  let target = rec.targetQuestionType;
+  let selectionMode: "primary" | "exploration" = "primary";
+
+  // 1b. Exploration override (Phase 2 P-1 W9)
+  if (opts.useExploration) {
+    const exp = findExplorationTarget(posteriors, {
+      excludeQtIds: [rec.targetQuestionType.id, rec.alternateQuestionType.id],
+    });
+    if (exp) {
+      target = exp.questionType;
+      selectionMode = "exploration";
+    }
+    // If exp is null (all well-explored), fall through to primary
+  }
 
   // 2. Top-2 dimensions by weight
   const dimsRanked = (Object.entries(target.weights) as Array<[VocabDimension, number]>)
@@ -278,5 +312,6 @@ export async function buildQueueV3(
     targetThetaSample: rec.targetThetaSample,
     generator: generated.generator,
     generatorIssues: generated.issues,
+    selectionMode,
   };
 }

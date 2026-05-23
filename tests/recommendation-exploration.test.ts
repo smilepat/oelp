@@ -9,6 +9,7 @@ import { describe, test, expect } from "vitest";
 import {
   findExplorationTarget,
   posteriorBalance,
+  shouldExplore,
   initialPosteriors,
   type BetaPosterior,
 } from "@/lib/recommendation";
@@ -138,5 +139,40 @@ describe("posteriorBalance (P-1 prep)", () => {
     expect(posteriorBalance(mkMap(slightUneven))).toBeGreaterThan(
       posteriorBalance(mkMap(heavyUneven))
     );
+  });
+});
+
+describe("shouldExplore (adaptive frequency)", () => {
+  test("T1: severe starvation (balance < 0.1) → every 2nd session", () => {
+    expect(shouldExplore(0.05, 1)).toBe(false);
+    expect(shouldExplore(0.05, 2)).toBe(true);
+    expect(shouldExplore(0.05, 3)).toBe(false);
+    expect(shouldExplore(0.05, 4)).toBe(true);
+  });
+
+  test("T2: mild starvation (0.1 ≤ balance < 0.5) → every 4th session", () => {
+    expect(shouldExplore(0.3, 1)).toBe(false);
+    expect(shouldExplore(0.3, 2)).toBe(false);
+    expect(shouldExplore(0.3, 3)).toBe(false);
+    expect(shouldExplore(0.3, 4)).toBe(true);
+    expect(shouldExplore(0.3, 5)).toBe(false);
+    expect(shouldExplore(0.3, 8)).toBe(true);
+  });
+
+  test("T3: well-balanced (≥ 0.5) → never explore", () => {
+    expect(shouldExplore(0.5, 2)).toBe(false);
+    expect(shouldExplore(0.7, 4)).toBe(false);
+    expect(shouldExplore(1.0, 100)).toBe(false);
+  });
+
+  test("T4: invalid session number → false", () => {
+    expect(shouldExplore(0.05, 0)).toBe(false);
+    expect(shouldExplore(0.05, -1)).toBe(false);
+  });
+
+  test("T5: policy boundary 0.1 — exactly 0.1 → mild path", () => {
+    // balance < 0.1 is severe; balance === 0.1 falls into mild (< 0.5)
+    expect(shouldExplore(0.1, 2)).toBe(false);
+    expect(shouldExplore(0.1, 4)).toBe(true);
   });
 });
