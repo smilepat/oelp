@@ -1,0 +1,14 @@
+{
+  "failedAt": "2026-05-23T02:41:25.894Z",
+  "tau": 0.5,
+  "contradictions": 1,
+  "gateMinTau": 0.4,
+  "gateMaxContradictions": 0,
+  "attemptedVersion": "auto-2026-05-23-sc8u",
+  "attemptedChanges": [
+    "TYPE-주장",
+    "TYPE-요지",
+    "TYPE-제목",
+    "TYPE-순서배열"
+  ]
+}

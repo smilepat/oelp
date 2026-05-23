@@ -1,0 +1,332 @@
+[
+  {
+    "qtId": "TYPE-요지",
+    "dimensionScores": {
+      "D1_Form": 78,
+      "D2_Meaning": 82,
+      "D3_Context": 45,
+      "D4_Network": 60,
+      "D5_Usage": 71
+    },
+    "isCorrect": true
+  },
+  {
+    "qtId": "TYPE-요지",
+    "dimensionScores": {
+      "D1_Form": 78,
+      "D2_Meaning": 82,
+      "D3_Context": 45,
+      "D4_Network": 60,
+      "D5_Usage": 71
+    },
+    "isCorrect": true
+  },
+  {
+    "qtId": "TYPE-요지",
+    "dimensionScores": {
+      "D1_Form": 78,
+      "D2_Meaning": 82,
+      "D3_Context": 45,
+      "D4_Network": 60,
+      "D5_Usage": 71
+    },
+    "isCorrect": true
+  },
+  {
+    "qtId": "TYPE-요지",
+    "dimensionScores": {
+      "D1_Form": 78,
+      "D2_Meaning": 82,
+      "D3_Context": 45,
+      "D4_Network": 60,
+      "D5_Usage": 71
+    },
+    "isCorrect": true
+  },
+  {
+    "qtId": "TYPE-요지",
+    "dimensionScores": {
+      "D1_Form": 78,
+      "D2_Meaning": 82,
+      "D3_Context": 45,
+      "D4_Network": 60,
+      "D5_Usage": 71
+    },
+    "isCorrect": true
+  },
+  {
+    "qtId": "TYPE-요지",
+    "dimensionScores": {
+      "D1_Form": 78,
+      "D2_Meaning": 82,
+      "D3_Context": 45,
+      "D4_Network": 60,
+      "D5_Usage": 71
+    },
+    "isCorrect": true
+  },
+  {
+    "qtId": "TYPE-요지",
+    "dimensionScores": {
+      "D1_Form": 78,
+      "D2_Meaning": 82,
+      "D3_Context": 45,
+      "D4_Network": 60,
+      "D5_Usage": 71
+    },
+    "isCorrect": true
+  },
+  {
+    "qtId": "TYPE-요지",
+    "dimensionScores": {
+      "D1_Form": 78,
+      "D2_Meaning": 82,
+      "D3_Context": 45,
+      "D4_Network": 60,
+      "D5_Usage": 71
+    },
+    "isCorrect": true
+  },
+  {
+    "qtId": "TYPE-요지",
+    "dimensionScores": {
+      "D1_Form": 78,
+      "D2_Meaning": 82,
+      "D3_Context": 45,
+      "D4_Network": 60,
+      "D5_Usage": 71
+    },
+    "isCorrect": true
+  },
+  {
+    "qtId": "TYPE-요지",
+    "dimensionScores": {
+      "D1_Form": 78,
+      "D2_Meaning": 82,
+      "D3_Context": 45,
+      "D4_Network": 60,
+      "D5_Usage": 71
+    },
+    "isCorrect": false
+  },
+  {
+    "qtId": "TYPE-흐름무관",
+    "dimensionScores": {
+      "D1_Form": 78,
+      "D2_Meaning": 82,
+      "D3_Context": 45,
+      "D4_Network": 60,
+      "D5_Usage": 71
+    },
+    "isCorrect": true
+  },
+  {
+    "qtId": "TYPE-흐름무관",
+    "dimensionScores": {
+      "D1_Form": 78,
+      "D2_Meaning": 82,
+      "D3_Context": 45,
+      "D4_Network": 60,
+      "D5_Usage": 71
+    },
+    "isCorrect": true
+  },
+  {
+    "qtId": "TYPE-흐름무관",
+    "dimensionScores": {
+      "D1_Form": 78,
+      "D2_Meaning": 82,
+      "D3_Context": 45,
+      "D4_Network": 60,
+      "D5_Usage": 71
+    },
+    "isCorrect": true
+  },
+  {
+    "qtId": "TYPE-흐름무관",
+    "dimensionScores": {
+      "D1_Form": 78,
+      "D2_Meaning": 82,
+      "D3_Context": 45,
+      "D4_Network": 60,
+      "D5_Usage": 71
+    },
+    "isCorrect": true
+  },
+  {
+    "qtId": "TYPE-흐름무관",
+    "dimensionScores": {
+      "D1_Form": 78,
+      "D2_Meaning": 82,
+      "D3_Context": 45,
+      "D4_Network": 60,
+      "D5_Usage": 71
+    },
+    "isCorrect": true
+  },
+  {
+    "qtId": "TYPE-흐름무관",
+    "dimensionScores": {
+      "D1_Form": 78,
+      "D2_Meaning": 82,
+      "D3_Context": 45,
+      "D4_Network": 60,
+      "D5_Usage": 71
+    },
+    "isCorrect": true
+  },
+  {
+    "qtId": "TYPE-흐름무관",
+    "dimensionScores": {
+      "D1_Form": 78,
+      "D2_Meaning": 82,
+      "D3_Context": 45,
+      "D4_Network": 60,
+      "D5_Usage": 71
+    },
+    "isCorrect": true
+  },
+  {
+    "qtId": "TYPE-흐름무관",
+    "dimensionScores": {
+      "D1_Form": 78,
+      "D2_Meaning": 82,
+      "D3_Context": 45,
+      "D4_Network": 60,
+      "D5_Usage": 71
+    },
+    "isCorrect": true
+  },
+  {
+    "qtId": "TYPE-흐름무관",
+    "dimensionScores": {
+      "D1_Form": 78,
+      "D2_Meaning": 82,
+      "D3_Context": 45,
+      "D4_Network": 60,
+      "D5_Usage": 71
+    },
+    "isCorrect": true
+  },
+  {
+    "qtId": "TYPE-흐름무관",
+    "dimensionScores": {
+      "D1_Form": 78,
+      "D2_Meaning": 82,
+      "D3_Context": 45,
+      "D4_Network": 60,
+      "D5_Usage": 71
+    },
+    "isCorrect": false
+  },
+  {
+    "qtId": "TYPE-순서배열",
+    "dimensionScores": {
+      "D1_Form": 78,
+      "D2_Meaning": 82,
+      "D3_Context": 45,
+      "D4_Network": 60,
+      "D5_Usage": 71
+    },
+    "isCorrect": true
+  },
+  {
+    "qtId": "TYPE-순서배열",
+    "dimensionScores": {
+      "D1_Form": 78,
+      "D2_Meaning": 82,
+      "D3_Context": 45,
+      "D4_Network": 60,
+      "D5_Usage": 71
+    },
+    "isCorrect": true
+  },
+  {
+    "qtId": "TYPE-순서배열",
+    "dimensionScores": {
+      "D1_Form": 78,
+      "D2_Meaning": 82,
+      "D3_Context": 45,
+      "D4_Network": 60,
+      "D5_Usage": 71
+    },
+    "isCorrect": true
+  },
+  {
+    "qtId": "TYPE-순서배열",
+    "dimensionScores": {
+      "D1_Form": 78,
+      "D2_Meaning": 82,
+      "D3_Context": 45,
+      "D4_Network": 60,
+      "D5_Usage": 71
+    },
+    "isCorrect": false
+  },
+  {
+    "qtId": "TYPE-순서배열",
+    "dimensionScores": {
+      "D1_Form": 78,
+      "D2_Meaning": 82,
+      "D3_Context": 45,
+      "D4_Network": 60,
+      "D5_Usage": 71
+    },
+    "isCorrect": true
+  },
+  {
+    "qtId": "TYPE-순서배열",
+    "dimensionScores": {
+      "D1_Form": 78,
+      "D2_Meaning": 82,
+      "D3_Context": 45,
+      "D4_Network": 60,
+      "D5_Usage": 71
+    },
+    "isCorrect": true
+  },
+  {
+    "qtId": "TYPE-순서배열",
+    "dimensionScores": {
+      "D1_Form": 78,
+      "D2_Meaning": 82,
+      "D3_Context": 45,
+      "D4_Network": 60,
+      "D5_Usage": 71
+    },
+    "isCorrect": true
+  },
+  {
+    "qtId": "TYPE-순서배열",
+    "dimensionScores": {
+      "D1_Form": 78,
+      "D2_Meaning": 82,
+      "D3_Context": 45,
+      "D4_Network": 60,
+      "D5_Usage": 71
+    },
+    "isCorrect": true
+  },
+  {
+    "qtId": "TYPE-순서배열",
+    "dimensionScores": {
+      "D1_Form": 78,
+      "D2_Meaning": 82,
+      "D3_Context": 45,
+      "D4_Network": 60,
+      "D5_Usage": 71
+    },
+    "isCorrect": true
+  },
+  {
+    "qtId": "TYPE-순서배열",
+    "dimensionScores": {
+      "D1_Form": 78,
+      "D2_Meaning": 82,
+      "D3_Context": 45,
+      "D4_Network": 60,
+      "D5_Usage": 71
+    },
+    "isCorrect": true
+  }
+]
