@@ -10,6 +10,11 @@ import {
   downloadCalibrationJSON,
   downloadFullSessionsJSON,
 } from "@/lib/session-export";
+import { ErrorLogPanel } from "@/components/ErrorLogPanel";
+import {
+  getRegressionEvents,
+  countByResult,
+} from "@/lib/regression-history";
 
 const SESSIONS_STORAGE_KEY = "oelp.sessions.default";
 
@@ -170,6 +175,10 @@ export default function SessionsPage() {
         </section>
       )}
 
+      <CalibrationHistoryPanel />
+
+      <ErrorLogPanel />
+
       <footer className="border-t border-zinc-200 pt-4 text-xs text-zinc-500 dark:border-zinc-800">
         <p>
           데이터 위치: <code>localStorage.oelp.sessions.default</code> · Calibration: 다운로드된 JSON을{" "}
@@ -177,6 +186,58 @@ export default function SessionsPage() {
         </p>
       </footer>
     </main>
+  );
+}
+
+function CalibrationHistoryPanel() {
+  const events = getRegressionEvents();
+  const counts = countByResult();
+  const recent = events.slice(0, 3);
+
+  return (
+    <section className="flex flex-col gap-3 rounded-md border border-zinc-200 p-4 dark:border-zinc-800">
+      <header className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
+        <p className="text-xs uppercase tracking-wider text-zinc-500">
+          Calibration History (Safety Net Audit)
+        </p>
+        <a
+          href="/regression-history"
+          className="text-[10px] text-zinc-500 underline hover:text-zinc-700 dark:hover:text-zinc-300"
+        >
+          전체 보기 → /regression-history
+        </a>
+      </header>
+      <div className="flex flex-wrap gap-3 text-xs">
+        <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-zinc-700 dark:bg-zinc-900 dark:text-zinc-300">
+          총 {events.length}건
+        </span>
+        <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-100">
+          PASS {counts.pass}
+        </span>
+        <span className="rounded-full bg-rose-100 px-2 py-0.5 text-rose-900 dark:bg-rose-950 dark:text-rose-100">
+          FAIL {counts.fail}
+        </span>
+      </div>
+      <ul className="flex flex-col gap-1 text-xs">
+        {recent.map((e) => (
+          <li key={e.id} className="flex gap-2">
+            <span
+              className={
+                e.result === "pass"
+                  ? "text-emerald-700 dark:text-emerald-300"
+                  : "text-rose-700 dark:text-rose-300"
+              }
+            >
+              {e.result === "pass" ? "✓" : "✗"}
+            </span>
+            <span className="font-mono text-[10px] text-zinc-500">
+              {new Date(e.occurredAt).toLocaleDateString()}
+            </span>
+            <span className="text-zinc-700 dark:text-zinc-300">{e.summary}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 
