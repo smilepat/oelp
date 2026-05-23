@@ -157,7 +157,8 @@ if (args.help || args.h) {
 Options:
   --responses <path>   JSON file: array of { qtId, dimensionScores, isCorrect }
   --prior <path>       JSON file: priorWeights (default: hardcoded v2)
-  --lambda <number>    ridge penalty (default 0.1)
+  --lambda <number>    ridge penalty (default 0.1, ignored if --auto-lambda)
+  --auto-lambda        derive λ from response count N (see schedule below)
   --min <number>       min samples per QT (default 30)
   --out <path>         write CalibrationResult to JSON
   --apply              update lib/ontology.ts weights (CAUTION)
@@ -182,7 +183,36 @@ const priorWeights = args.prior
   ? JSON.parse(readFileSync(join(ROOT, args.prior), "utf-8"))
   : CURRENT_WEIGHTS;
 
-const lambda = args.lambda ? parseFloat(args.lambda) : 0.1;
+/**
+ * Auto-λ schedule (dogfooding-3 L2 follow-up).
+ *
+ * dogfooding-3 (1600 responses, λ=1.0) revealed that ridge noise still
+ * leaked through prior pull → 2 contradictions in D5_Usage. The fix is
+ * an N-dependent λ: heavy prior on tiny data, light prior on large data.
+ *
+ *   N < 100   → λ=2.0  (mostly trust prior)
+ *   100-500   → λ=1.5
+ *   500-2000  → λ=1.0  (previous default for 1600)
+ *   2000-10k  → λ=0.7
+ *   > 10000   → λ=0.5
+ *
+ * Tunable: revisit thresholds when external learner data accumulates.
+ */
+function autoLambda(n) {
+  if (n < 100) return 2.0;
+  if (n < 500) return 1.5;
+  if (n < 2000) return 1.0;
+  if (n < 10000) return 0.7;
+  return 0.5;
+}
+
+let lambda;
+if (args["auto-lambda"]) {
+  lambda = autoLambda(responses.length);
+  console.log(`[auto-lambda] N=${responses.length} → λ=${lambda}`);
+} else {
+  lambda = args.lambda ? parseFloat(args.lambda) : 0.1;
+}
 const min = args.min ? parseInt(args.min, 10) : 30;
 
 const result = calibrateWeights({ responses, priorWeights }, { lambda, minSamplesPerQT: min });
