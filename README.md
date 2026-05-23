@@ -1,7 +1,7 @@
 # OELP — Ontology English Learning Platform
 
 > Phase 1 MVP + P-1 Recommendation v2 + P-1.5 Bridge + P-2 EBS Foundation
-> Status: **173 Vitest tests · 7 routes · 17 lib modules · 4-layer safety net**
+> Status: **191 Vitest tests · 7 routes · 17 lib modules · 4-layer safety net**
 > Owner: [smilepat](https://github.com/smilepat) · 2026-05-23
 
 본 레포는 [LogicFlow EdTech 생태계](https://github.com/smilepat/myprojects)의 통합 구현체다. **신규 빌드가 아니라 기존 자산 통합 레이어**.
@@ -50,7 +50,7 @@ npm install
 npm run dev
 # → http://localhost:3000 (port 점유 시 3001 fallback)
 
-# 전체 CI 시뮬레이션 (lint + 173 tests + C4.1 + build)
+# 전체 CI 시뮬레이션 (lint + 191 tests + C4.1 + build)
 npm run ci
 ```
 
@@ -123,7 +123,7 @@ node scripts/calibrate.mjs --responses data/dogfood.json --min 100 --lambda 1.0 
 ## 5. 검증 안전망 (4중)
 
 ```
-1. Vitest 173 단위 테스트 (1.95s)
+1. Vitest 191 단위 테스트 (1.95s)
    ↓
 2. C4.1 dimension-mapping 회귀 (PR 마다 + weekly cron 둘 다)
    ↓
@@ -134,7 +134,7 @@ node scripts/calibrate.mjs --responses data/dogfood.json --min 100 --lambda 1.0 
 
 ### GitHub Actions
 
-- **`pr-check.yml`**: PR 마다 lint + 173 tests + C4.1 + build 자동 게이트
+- **`pr-check.yml`**: PR 마다 lint + 191 tests + C4.1 + build 자동 게이트
 - **`weekly-calibration.yml`**: 일요일 02:00 UTC + Supabase events → calibrate → PR 자동 생성
 
 ---
@@ -166,7 +166,7 @@ node scripts/calibrate.mjs --responses data/dogfood.json --min 100 --lambda 1.0 
 - **Frontend**: Next.js 16.2.6 (App Router, Turbopack), React 19.2.4, TypeScript, Tailwind CSS 4
 - **Visualizations**: Cytoscape.js 3.33.4, Chart.js 4.5.1, react-chartjs-2 5.3.1
 - **Data**: vocabulary-pool (auto-gen from vocabulary-db), localStorage stores
-- **Testing**: Vitest 4.1.7 (18 test files, 173 tests)
+- **Testing**: Vitest 4.1.7 (20 test files, 191 tests)
 - **Backend (planned)**: vocab-cat-test FastAPI (Docker, separate container)
 - **Deployment (planned)**: Vercel (Next.js) + Cloud Run (FastAPI)
 

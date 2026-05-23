@@ -24,14 +24,16 @@ export default defineConfig({
       ],
       // Modest baseline — tighten as suite grows. Failure here is a STRICT
       // gate (CI red), so set realistic numbers, not aspirational.
-      // Baseline frozen 2026-05-23 at current snapshot - 1pp tolerance.
-      // Each PR can only ratchet up, never down. Tighten in future PRs as
-      // un-tested modules (leitner.ts 0%, session-export 25%) get covered.
+      // Baseline frozen 2026-05-23 (A7 ratchet) at current snapshot - 3pp.
+      // A6 initial: 75/65/75/75. A7 added leitner+session-export tests
+      // → boost to 80/70/80/80. Next ratchet candidate: ontology.ts (30%),
+      // diagnostic.ts (48%), queue.ts (51%), error-log.ts (46% — global
+      // handlers untestable without window event simulation).
       thresholds: {
-        lines: 75,
-        functions: 75,
-        branches: 65,
-        statements: 75,
+        lines: 80,
+        functions: 80,
+        branches: 70,
+        statements: 80,
       },
     },
   },
