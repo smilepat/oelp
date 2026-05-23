@@ -24,16 +24,18 @@ export default defineConfig({
       ],
       // Modest baseline — tighten as suite grows. Failure here is a STRICT
       // gate (CI red), so set realistic numbers, not aspirational.
-      // Baseline frozen 2026-05-23 (A7 ratchet) at current snapshot - 3pp.
-      // A6 initial: 75/65/75/75. A7 added leitner+session-export tests
-      // → boost to 80/70/80/80. Next ratchet candidate: ontology.ts (30%),
-      // diagnostic.ts (48%), queue.ts (51%), error-log.ts (46% — global
-      // handlers untestable without window event simulation).
+      // Baseline ratchet history (2026-05-23 single sprint):
+      //   A6 initial:    75 / 65 / 75 / 75  (lines/branches/funcs/stmts)
+      //   A7 (+ leitner + session-export):       80 / 70 / 80 / 80
+      //   A7+ Phase 2 (+ ontology + diagnostic + queue-v1):  88 / 75 / 90 / 85
+      // Current snapshot: 91.4 / 78.26 / 93.79 / 88.83
+      // Next targets if pushing further: error-log global handlers (46%
+      // — window events hard to mock), recommendation-store.ts drift logic.
       thresholds: {
-        lines: 80,
-        functions: 80,
-        branches: 70,
-        statements: 80,
+        lines: 88,
+        functions: 90,
+        branches: 75,
+        statements: 85,
       },
     },
   },
