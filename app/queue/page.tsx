@@ -23,8 +23,11 @@ import {
 import {
   posteriorConfidence,
   findExplorationTarget,
+  posteriorBalance,
+  shouldExplore,
   type BetaPosterior,
 } from "@/lib/recommendation";
+import { loadSessions } from "@/lib/session-store";
 import {
   saveSession,
   type SessionEvaluation,
@@ -44,13 +47,19 @@ export default function QueuePage() {
   const [plan, setPlan] = useState<QueuePlanV3 | null>(null);
   const [posteriors, setPosteriors] = useState<Record<string, BetaPosterior> | null>(null);
 
-  // V3 generator-based plan loading (P-2 W4). One-shot async on mount —
-  // eslint-disable for setState in effect (browser-only async resource).
+  // V3 generator-based plan loading (P-2 W4) + adaptive exploration (P-1 W9).
+  // shouldExplore(balance, nextSessionN) decides if exploration target replaces
+  // primary. One-shot async on mount — eslint-disable for setState in effect.
   useEffect(() => {
     let cancelled = false;
     (async () => {
       const loaded = loadPosteriors(diagnostic.dimensionScores);
-      const result = await buildQueueV3(diagnostic, loaded, defaultGeneratorChain());
+      const balance = posteriorBalance(loaded);
+      const nextSession = loadSessions().length + 1;
+      const useExploration = shouldExplore(balance, nextSession);
+      const result = await buildQueueV3(diagnostic, loaded, defaultGeneratorChain(), {
+        useExploration,
+      });
       if (!cancelled) {
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setPlan(result);
@@ -241,6 +250,14 @@ export default function QueuePage() {
           <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[10px] uppercase tracking-wider text-sky-800 dark:bg-sky-950 dark:text-sky-200">
             gen: {planNonNull.generator}
           </span>
+          {planNonNull.selectionMode === "exploration" && (
+            <span
+              className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] uppercase tracking-wider text-amber-900 dark:bg-amber-950 dark:text-amber-100"
+              title="Adaptive exploration: balance < 0.5 → 매 4번째 세션마다 starved QT를 학습 큐로 자동 선택"
+            >
+              ▶ exploration mode
+            </span>
+          )}
           {(() => {
             // Phase 2 P-1 W9 exploration target (myprojects docs/02-design/
             // phase2-p1-recommendation-w9-exploration.md). Excludes primary +
