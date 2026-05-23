@@ -33,6 +33,9 @@ jobs:
       - name: Vitest unit tests
         run: npm test
 
+      - name: Coverage thresholds (A6)
+        run: npm run test:coverage
+
       - name: JSON Schema validation (T1.1)
         run: node scripts/validate-schemas.mjs
 
