@@ -188,7 +188,8 @@ node scripts/calibrate.mjs --responses data/dogfood.json --min 100 --lambda 1.0 
 | P-1.5 Bridge | 100% (1 week) |
 | P-1.5b Varied Diagnostic | 100% |
 | P-2 EBS Content Foundation | 100% (6 weeks) |
-| dogfooding-1 | 30 응답, 90% 정답률, C4.1 gate 발동 확인 |
+| dogfooding-1 | 30 응답, 90% 정답률, C4.1 gate 발동 확인 (D2 over-declared) |
+| dogfooding-2 | real 30 + sim 1200 결합, C4.1 gate 재발동 (D3 under-declared, 자동 롤백) |
 
 상세: [`docs/04-report/oelp-integrated-summary.md`](https://github.com/smilepat/myprojects/blob/main/docs/04-report/oelp-integrated-summary.md)
 
@@ -232,3 +233,4 @@ node scripts/calibrate.mjs --responses data/dogfood.json --min 100 --lambda 1.0 
 - 2026-05-23: **dogfooding-1 (본인) 30 응답 → C4.1 gate 자동 롤백 검증**
 - 2026-05-23: P-1.5b varied diagnostic + simulator 검증
 - 2026-05-23: P-2 W1-W6 (content-generator + 12 validators + buildQueueV3 + IRT cold-start)
+- 2026-05-23: **dogfooding-2 (real 30 + sim 1200) → C4.1 게이트 D3 under-declared 모순 검출 → 자동 롤백**
