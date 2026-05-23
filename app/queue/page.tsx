@@ -391,7 +391,7 @@ function Stat({ label, value, hint }: { label: string; value: string; hint?: str
     <div className="flex flex-col gap-1 rounded-md border border-zinc-200 px-3 py-2 dark:border-zinc-800">
       <p className="text-xs text-zinc-500">{label}</p>
       <p className="text-sm font-semibold text-zinc-950 dark:text-zinc-50">{value}</p>
-      {hint && <p className="text-[10px] text-zinc-400">{hint}</p>}
+      {hint && <p className="text-[10px] text-zinc-500 dark:text-zinc-400">{hint}</p>}
     </div>
   );
 }

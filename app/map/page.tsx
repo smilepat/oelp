@@ -117,7 +117,7 @@ function DetailPanel({
   return (
     <div className="flex flex-col gap-2 rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
       <p className="text-xs uppercase tracking-wider text-zinc-500">{title}</p>
-      {children ?? <p className="text-sm text-zinc-400">{empty}</p>}
+      {children ?? <p className="text-sm text-zinc-500 dark:text-zinc-400">{empty}</p>}
     </div>
   );
 }

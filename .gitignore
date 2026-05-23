@@ -95,3 +95,8 @@ __pycache__/
 .pytest_cache/
 .venv/
 out/
+
+# Playwright e2e (T4.1)
+test-results/
+playwright-report/
+.playwright-mcp/
