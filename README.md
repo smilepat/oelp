@@ -1,6 +1,6 @@
 # OELP — Ontology English Learning Platform
 
-> Phase 1 MVP + P-1 Recommendation v2 + P-1.5 Bridge + P-2 EBS Foundation + v4 Adaptive Exploration + v5 Stage A 소진 + v8 Cloud Run 배포 + v9-v12 D1 plateau finding + 옵션 A' 사전 시뮬 PASS
+> Phase 1 MVP + P-1 Recommendation v2 + P-1.5 Bridge + P-2 EBS Foundation + v4 Adaptive Exploration + v5 Stage A 소진 + v8 Cloud Run 배포 + v9-v13 D1 plateau + 옵션 A' 4중 안전성
 > Status: **371 Vitest tests · 7 routes · 21 lib modules · 25 scripts · 13 components · 4-layer safety net**
 > Owner: [smilepat](https://github.com/smilepat) · 2026-05-24
 
@@ -137,6 +137,7 @@ node scripts/calibrate.mjs --responses data/dogfood.json --min 100 --lambda 1.0 
 | `check-dim-coverage.mjs` | keyVariable 매핑 자동 진단 (v10 D1_Form hidden defect 같은 갭 자동 검출) |
 | `dogfood-9-dim-plateau-scan.mjs` | 5 dim × 5 archetype plateau scan matrix (D1 systemic defect 일반화 검증) |
 | `simulate-option-a-prime.mjs` | 옵션 A' 4 파일 PR 사전 in-memory 검증 (C4.1 게이트 PASS/FAIL 예측) |
+| `dogfood-10-option-a-prime-matrix.mjs` | 옵션 A' 적용 시 5×5 matrix 변화 사전 측정 (production weight in-memory override, SAFE verdict 자동 출력) |
 
 ---
 
@@ -198,7 +199,7 @@ node scripts/calibrate.mjs --responses data/dogfood.json --min 100 --lambda 1.0 
 
 ---
 
-## 9. 진행 상황 종합 (2026-05-24 v12 sprint 종료 — 옵션 A' PR 사전 시뮬 PASS, 자동화 도구 누적)
+## 9. 진행 상황 종합 (2026-05-24 v13 sprint 종료 — 옵션 A' 4중 안전성 + 학습자 도착 시 자동 활성 UI)
 
 | Phase | 진행 |
 |---|---|
@@ -247,9 +248,12 @@ node scripts/calibrate.mjs --responses data/dogfood.json --min 100 --lambda 1.0 
 | **v11: check-dim-coverage + dogfood-9** | keyVariable 매핑 자동 진단 + 5×5 plateau matrix scan (D1 5/5 archetype 일반화 확정) |
 | **v12: 12번째 CI gate** | check-dim-coverage workflow 통합 (현재 D1 MISSING non-blocking, 옵션 A' PR 후 strict 활성) |
 | **v12: simulate-option-a-prime** | 본인 4 파일 PR 사전 in-memory 검증 — tau 1.0→0.5, contradictions 0 → **시뮬 PASS** |
+| **v13: dogfood-10 옵션 A' 효과 사전 측정** | production weight in-memory override → D1 +66-81%p 회복, D3 dominant -3%p, 다른 dim 변동 0 → **SAFE verdict** |
+| **v13: PlateauWarningPanel** (`/sessions`) | 13번째 component, 학습자 4주+ 누적 시 자동 활성, D1 plateau 발견 시 옵션 A' PR 권장 메시지 + 설계 문서 링크 |
+| **v13: 옵션 A' 4중 안전성 확보** | 시뮬 (simulate) / 매트릭스 (dogfood-10) / 실 검증 (PlateauWarningPanel) / CI gate (check-dim-coverage) — 본인 PR risk-free |
 
 상세:
-- 통합 회고: [`docs/04-report/oelp-integrated-summary.md`](https://github.com/smilepat/myprojects/blob/main/docs/04-report/oelp-integrated-summary.md) v12 (옵션 A' PR safe)
+- 통합 회고: [`docs/04-report/oelp-integrated-summary.md`](https://github.com/smilepat/myprojects/blob/main/docs/04-report/oelp-integrated-summary.md) v13 (4중 안전성)
 - Stability sprint: [`docs/04-report/stability-roadmap-tier-1-3-complete.md`](https://github.com/smilepat/myprojects/blob/main/docs/04-report/stability-roadmap-tier-1-3-complete.md)
 - Phase 2 PRD: [`docs/01-plan/prd-oelp-mvp-phase2.md`](https://github.com/smilepat/myprojects/blob/main/docs/01-plan/prd-oelp-mvp-phase2.md)
 - C4.1 게이트 3 cycle: [`docs/03-analysis/dogfooding-pass-{1,2,3}.md`](https://github.com/smilepat/myprojects/tree/main/docs/03-analysis)
