@@ -26,8 +26,15 @@ on:
 
 jobs:
   smoke:
+    # NOTE 2026-05-24: vocab-cat-test repo is private, so default GITHUB_TOKEN
+    # cannot checkout the sibling. This local-spawn job has never succeeded
+    # in CI for this reason. Kept as non-blocking until either (a) a PAT with
+    # cross-repo read is added as `VOCAB_CAT_TEST_PAT` secret, or (b) the
+    # repo is made public. Primary smoke test is now `cloud-run-smoke` job
+    # below, which validates the deployed Cloud Run revision directly.
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    continue-on-error: true
 
     steps:
       - name: Checkout OELP
@@ -36,6 +43,7 @@ jobs:
       - name: Checkout vocab-cat-test (sibling)
         uses: actions/checkout@v4
         with:
+          token: ${{ secrets.VOCAB_CAT_TEST_PAT || secrets.GITHUB_TOKEN }}
           repository: smilepat/vocab-cat-test
           path: vocab-cat-test
           # Default branch (main) — picks up PR #1 dimension_scores fix.
