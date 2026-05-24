@@ -14,6 +14,7 @@ import { ErrorLogPanel } from "@/components/ErrorLogPanel";
 import { TrendPanel } from "@/components/TrendPanel";
 import { PosteriorBalancePanel } from "@/components/PosteriorBalancePanel";
 import { AnalyticsQueuePanel } from "@/components/AnalyticsQueuePanel";
+import { PlateauWarningPanel } from "@/components/PlateauWarningPanel";
 import {
   getRegressionEvents,
   countByResult,
@@ -136,6 +137,8 @@ export default function SessionsPage() {
       <AnalyticsQueuePanel />
 
       <TrendPanel sessions={sessions} />
+
+      <PlateauWarningPanel sessions={sessions} />
 
       <CalibrationHistoryPanel />
 
