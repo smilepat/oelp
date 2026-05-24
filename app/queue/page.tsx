@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { getActiveDiagnostic } from "@/lib/active-diagnostic";
 import {
   buildQueueV3,
@@ -89,6 +89,11 @@ export default function QueuePage() {
   const [responses, setResponses] = useState<Response[]>([]);
   const [done, setDone] = useState(false);
   const [sessionStart] = useState<string>(() => new Date().toISOString());
+  // queue.item_answered timing: refreshed each time a new card is shown.
+  const itemStartRef = useRef<number>(Date.now());
+  useEffect(() => {
+    itemStartRef.current = Date.now();
+  }, [currentIdx]);
   const [sessionRecord, setSessionRecord] = useState<SessionRecord | null>(null);
   const [evalSaved, setEvalSaved] = useState(false);
   const [summary, setSummary] = useState<{
@@ -132,6 +137,7 @@ export default function QueuePage() {
   function submit() {
     if (selectedIdx == null || !card) return;
     const correct = selectedIdx === card.answerIdx;
+    const responseTimeMs = Date.now() - itemStartRef.current;
     setResponses((prev) => [
       ...prev,
       {
@@ -142,6 +148,16 @@ export default function QueuePage() {
       },
     ]);
     setRevealed(true);
+    logEvent({
+      type: "queue.item_answered",
+      properties: {
+        itemId: card.itemId,
+        qtId: planNonNull.targetQuestionType.id,
+        isCorrect: correct,
+        responseTimeMs,
+        sessionPos: currentIdx + 1,
+      },
+    });
   }
 
   function next() {
