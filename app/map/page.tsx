@@ -150,6 +150,26 @@ export default function MapPage() {
                 <p className="mt-1 text-[10px] text-zinc-500">
                   ▣ declared (ontology-weights.json) · ◆ derived (keyVariables × C4.1 매핑)
                 </p>
+                {(() => {
+                  const rows = compareWeights(selectedQt.weights, selectedQt.keyVariables);
+                  const d1Row = rows.find((r) => r.dim === "D1_Form");
+                  if (!d1Row || d1Row.derived > 0) return null;
+                  return (
+                    <div className="mt-2 rounded-md bg-amber-50 px-2 py-1.5 text-[10px] text-amber-900 dark:bg-amber-950 dark:text-amber-100">
+                      ⚠️ <strong>D1_Form derived = 0%</strong> — 이 QT의 keyVariables에 form/spelling 증거 없음.
+                      v10 finding (5 archetype 시뮬 모두에서 D1 plateau). 옵션 A&apos; PR로 해결 가능 ({" "}
+                      <a
+                        href="https://github.com/smilepat/myprojects/blob/main/docs/02-design/d1-plateau-option-a-prime.md"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="underline"
+                      >
+                        설계 문서
+                      </a>
+                      ).
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           ) : null}
