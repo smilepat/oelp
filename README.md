@@ -1,7 +1,7 @@
 # OELP — Ontology English Learning Platform
 
-> Phase 1 MVP + P-1 Recommendation v2 + P-1.5 Bridge + P-2 EBS Foundation + v4 Adaptive Exploration + v5 Stage A 소진 + v8 Cloud Run 배포 + v9 D1 plateau finding
-> Status: **356 Vitest tests · 7 routes · 20 lib modules · 23 scripts · 12 components · 4-layer safety net**
+> Phase 1 MVP + P-1 Recommendation v2 + P-1.5 Bridge + P-2 EBS Foundation + v4 Adaptive Exploration + v5 Stage A 소진 + v8 Cloud Run 배포 + v9-v12 D1 plateau finding + 옵션 A' 사전 시뮬 PASS
+> Status: **356 Vitest tests · 7 routes · 20 lib modules · 24 scripts · 12 components · 4-layer safety net**
 > Owner: [smilepat](https://github.com/smilepat) · 2026-05-24
 
 본 레포는 [LogicFlow EdTech 생태계](https://github.com/smilepat/myprojects)의 통합 구현체다. **신규 빌드가 아니라 기존 자산 통합 레이어**.
@@ -109,7 +109,7 @@ node scripts/calibrate.mjs --responses data/dogfood.json --min 100 --lambda 1.0 
 
 ---
 
-## 4. Scripts (23)
+## 4. Scripts (24)
 
 | 스크립트 | 역할 |
 |---|---|
@@ -136,6 +136,7 @@ node scripts/calibrate.mjs --responses data/dogfood.json --min 100 --lambda 1.0 
 | `dogfood-8-learning-curve.mjs` | 단일 학습자 종방향 학습 곡선 (multi-archetype + `--d1-boost`로 옵션 A 시뮬) |
 | `check-dim-coverage.mjs` | keyVariable 매핑 자동 진단 (v10 D1_Form hidden defect 같은 갭 자동 검출) |
 | `dogfood-9-dim-plateau-scan.mjs` | 5 dim × 5 archetype plateau scan matrix (D1 systemic defect 일반화 검증) |
+| `simulate-option-a-prime.mjs` | 옵션 A' 4 파일 PR 사전 in-memory 검증 (C4.1 게이트 PASS/FAIL 예측) |
 
 ---
 
@@ -197,7 +198,7 @@ node scripts/calibrate.mjs --responses data/dogfood.json --min 100 --lambda 1.0 
 
 ---
 
-## 9. 진행 상황 종합 (2026-05-24 v9 sprint 종료 — Stage B + 7번째 closed-loop 후보 확정)
+## 9. 진행 상황 종합 (2026-05-24 v12 sprint 종료 — 옵션 A' PR 사전 시뮬 PASS, 자동화 도구 누적)
 
 | Phase | 진행 |
 |---|---|
@@ -241,9 +242,14 @@ node scripts/calibrate.mjs --responses data/dogfood.json --min 100 --lambda 1.0 
 | **v9: dogfood-8 다중 archetype** | 5 archetype 모두 D1_Form 0% gap closed → **archetype-independent structural defect** 확정 |
 | **v9: 옵션 A 정량 검증** | TYPE-제목 D1 weight 0.05→0.20 simulation → 모든 archetype 66-70% gap 회복 입증 ([gap 분석](https://github.com/smilepat/myprojects/blob/main/docs/03-analysis/dogfooding-8-learning-curve-d1-plateau.md)) |
 | **v9: 7번째 closed-loop 후보 PR ready** | D1_Form plateau breaker — `ontology-weights.json` TYPE-제목 1행만 수정. C4.1 게이트가 검증. Stage C 실 데이터 도착 시 검증 |
+| **v10: 옵션 A1 단독 C4.1 거부** | weight 단독 변경은 도메인 모순 자동 catch ("선언만 있고 keyVariables 근거 없음") → 안전망 가치 정량 입증 |
+| **v10: 옵션 A' 4 파일 동시 PR 설계** | dimension-mapping + kv-dim-mapping + ontology + weights 동시 변경 plan (1일 작업) |
+| **v11: check-dim-coverage + dogfood-9** | keyVariable 매핑 자동 진단 + 5×5 plateau matrix scan (D1 5/5 archetype 일반화 확정) |
+| **v12: 12번째 CI gate** | check-dim-coverage workflow 통합 (현재 D1 MISSING non-blocking, 옵션 A' PR 후 strict 활성) |
+| **v12: simulate-option-a-prime** | 본인 4 파일 PR 사전 in-memory 검증 — tau 1.0→0.5, contradictions 0 → **시뮬 PASS** |
 
 상세:
-- 통합 회고: [`docs/04-report/oelp-integrated-summary.md`](https://github.com/smilepat/myprojects/blob/main/docs/04-report/oelp-integrated-summary.md) v8 (Stage B 진입)
+- 통합 회고: [`docs/04-report/oelp-integrated-summary.md`](https://github.com/smilepat/myprojects/blob/main/docs/04-report/oelp-integrated-summary.md) v12 (옵션 A' PR safe)
 - Stability sprint: [`docs/04-report/stability-roadmap-tier-1-3-complete.md`](https://github.com/smilepat/myprojects/blob/main/docs/04-report/stability-roadmap-tier-1-3-complete.md)
 - Phase 2 PRD: [`docs/01-plan/prd-oelp-mvp-phase2.md`](https://github.com/smilepat/myprojects/blob/main/docs/01-plan/prd-oelp-mvp-phase2.md)
 - C4.1 게이트 3 cycle: [`docs/03-analysis/dogfooding-pass-{1,2,3}.md`](https://github.com/smilepat/myprojects/tree/main/docs/03-analysis)
