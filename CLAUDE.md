@@ -17,21 +17,23 @@ OELP = LogicFlow EdTech 생태계의 **통합 학습 플랫폼** (Next.js 16 + V
 - Phase 1 MVP + P-1 추천 v2 + P-1.5/b Bridge + P-2 EBS Foundation **모두 완료**
 - 자동 평가 12 C 기준 **12/12 measured PASS** (C1.1/C1.2 vocab-cat-test 실측 포함)
 
-## 2. 현재 상태 (v3 sprint 종료)
+## 2. 현재 상태 (v9 sprint 종료 — Stage B 진입 + 7번째 closed-loop 후보 확정)
 
 | 측면 | 수치 |
 |---|---|
-| Vitest tests | 249 (27 files) |
+| Vitest tests | 342 (36 files) |
 | Playwright e2e | 14 (12 A11y + 2 adaptive) |
 | Routes | 7 (/ /diagnose /map /queue /sessions /regression-history + _not-found) |
-| lib 모듈 | 18 |
-| Scripts | 13 |
-| Coverage (lines) | 95.51% (threshold 93/80/95/90) |
-| WCAG 2.1 AA | 12/12 (desktop + mobile) |
-| CI 단계 | 8 (lint → vitest → schema → README freshness → C4.1 → C4.2 → build → coverage) |
-| GitHub Actions | 3 (pr-check, weekly-calibration, vocab-cat-test-smoke) |
-| Dependabot | 4 npm groups + Actions ecosystem |
-| 외부 배포 | Vercel Production |
+| lib 모듈 | 20 |
+| Scripts | 21 (dogfood-8 multi-archetype + d1-boost 추가) |
+| Components | 12 |
+| Coverage (lines) | 97.79% (threshold 93/80/95/90) |
+| WCAG 2.1 AA | 12/12 (desktop + mobile, **Production URL 검증 12/12 PASS**) |
+| CI 단계 | 11 (lint → vitest → schema → README freshness → C4.1 → C4.2 → build → coverage → A11y desktop/mobile → cross-link → cloud-run-smoke) |
+| GitHub Actions | 3 (pr-check, weekly-calibration, vocab-cat-test-smoke + cloud-run-smoke job) |
+| 외부 배포 | **Vercel + Cloud Run 양쪽 Production** (`oelp-phi.vercel.app` + `vocab-cat-api-452237528328.asia-northeast3.run.app`) |
+| Analytics events | 11/11 자율 wiring 완성 (Supabase config 대기) |
+| Closed-loop iterations | **6 확정** (Tier 1-3 → λ → exploration → adaptive prep → adaptive verify → cohort exploration) + **7번째 후보 발견** (D1_Form plateau) |
 
 ## 3. 자주 쓰는 명령
 
@@ -212,3 +214,6 @@ vocab-cat-test (semantic/contextual/form/relational/pragmatic) ↔ OELP (D2/D3/D
 - 2026-05-23 v2: Tier 1-4 stability + Vercel 배포 + vocab-cat-test 통합
 - 2026-05-23 v3: dogfooding-3 + λ schedule + C4.3 scaffolding + 본 CLAUDE.md 정비
 - 2026-05-24 v4: 5 dogfooding cycles + W9 exploration + R5 long-run + CI 10 gates + §10 closed-loop 패턴 명시
+- 2026-05-24 v5-v7: Stage A 백로그 소진 (mock script / dogfood-7 / CalibrationEventSync / coverage 97.79%) + 6번째 closed-loop 확정
+- 2026-05-24 v8: **Cloud Run 배포 완료** (asia-northeast3, 7/7 PASS) + Vercel env wiring + cloud-run-smoke CI (11번째 gate) + EBS 옵션 B 재정의 (1-2일 PR)
+- 2026-05-24 v9: dogfood-8 다중 archetype + 옵션 A 정량 검증 → **D1_Form plateau가 5 archetype 모두에서 0%** + 옵션 A1 (TYPE-제목 weight 0.05→0.20) **66-70% 회복** 입증 → 7번째 closed-loop 후보 PR ready

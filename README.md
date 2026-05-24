@@ -1,7 +1,7 @@
 # OELP — Ontology English Learning Platform
 
-> Phase 1 MVP + P-1 Recommendation v2 + P-1.5 Bridge + P-2 EBS Foundation + v4 Adaptive Exploration + v5 Stage A 소진 + v8 Cloud Run 배포
-> Status: **342 Vitest tests · 7 routes · 20 lib modules · 20 scripts · 12 components · 4-layer safety net**
+> Phase 1 MVP + P-1 Recommendation v2 + P-1.5 Bridge + P-2 EBS Foundation + v4 Adaptive Exploration + v5 Stage A 소진 + v8 Cloud Run 배포 + v9 D1 plateau finding
+> Status: **342 Vitest tests · 7 routes · 20 lib modules · 21 scripts · 12 components · 4-layer safety net**
 > Owner: [smilepat](https://github.com/smilepat) · 2026-05-24
 
 본 레포는 [LogicFlow EdTech 생태계](https://github.com/smilepat/myprojects)의 통합 구현체다. **신규 빌드가 아니라 기존 자산 통합 레이어**.
@@ -109,7 +109,7 @@ node scripts/calibrate.mjs --responses data/dogfood.json --min 100 --lambda 1.0 
 
 ---
 
-## 4. Scripts (20)
+## 4. Scripts (21)
 
 | 스크립트 | 역할 |
 |---|---|
@@ -132,6 +132,8 @@ node scripts/calibrate.mjs --responses data/dogfood.json --min 100 --lambda 1.0 
 | `dogfood-6-adaptive-threshold.mjs` | adaptive `max(20, mean × 0.3)` 검증 (R5 fix, balance 0.030→0.303) |
 | `check-cross-repo-links.mjs` | myprojects 크로스 레포 링크 raw HEAD 검증 |
 | `mock-vocab-cat-test.mjs` | vocab-cat-test FastAPI mock (offline dogfooding용 — `/health` `/start` `/respond` `/results`) |
+| `dogfood-7-cohort.mjs` | multi-learner cohort forecast (N=1/5/10/30/50 + `--exploration on`로 풀 QT 커버) |
+| `dogfood-8-learning-curve.mjs` | 단일 학습자 종방향 학습 곡선 (multi-archetype + `--d1-boost`로 옵션 A 시뮬) |
 
 ---
 
@@ -193,7 +195,7 @@ node scripts/calibrate.mjs --responses data/dogfood.json --min 100 --lambda 1.0 
 
 ---
 
-## 9. 진행 상황 종합 (2026-05-24 v8 sprint 종료 — Stage B 진입)
+## 9. 진행 상황 종합 (2026-05-24 v9 sprint 종료 — Stage B + 7번째 closed-loop 후보 확정)
 
 | Phase | 진행 |
 |---|---|
@@ -234,6 +236,9 @@ node scripts/calibrate.mjs --responses data/dogfood.json --min 100 --lambda 1.0 
 | **v8: Vercel env wiring + redeploy** | `NEXT_PUBLIC_VOCAB_CAT_TEST_URL` Production+Development. `oelp-phi.vercel.app` /diagnose fallback panel 해제 |
 | **v8: cloud-run-smoke CI job** | Sunday 03:00 UTC + workflow_dispatch. Cloud Run /health + verify-vocab-cat-test 자동. **11번째 CI gate** |
 | **v8: 6번째 closed-loop 확정** | cohort exploration policy 영구화 (forecast → empirical 검증 → policy) |
+| **v9: dogfood-8 다중 archetype** | 5 archetype 모두 D1_Form 0% gap closed → **archetype-independent structural defect** 확정 |
+| **v9: 옵션 A 정량 검증** | TYPE-제목 D1 weight 0.05→0.20 simulation → 모든 archetype 66-70% gap 회복 입증 ([gap 분석](https://github.com/smilepat/myprojects/blob/main/docs/03-analysis/dogfooding-8-learning-curve-d1-plateau.md)) |
+| **v9: 7번째 closed-loop 후보 PR ready** | D1_Form plateau breaker — `ontology-weights.json` TYPE-제목 1행만 수정. C4.1 게이트가 검증. Stage C 실 데이터 도착 시 검증 |
 
 상세:
 - 통합 회고: [`docs/04-report/oelp-integrated-summary.md`](https://github.com/smilepat/myprojects/blob/main/docs/04-report/oelp-integrated-summary.md) v8 (Stage B 진입)
