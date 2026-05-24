@@ -1,7 +1,7 @@
 # OELP — Ontology English Learning Platform
 
 > Phase 1 MVP + P-1 Recommendation v2 + P-1.5 Bridge + P-2 EBS Foundation + v4 Adaptive Exploration + v5 Stage A 소진 + v8 Cloud Run 배포 + v9-v14 D1 plateau + 옵션 A' 5중 안전성 (PRD R6 정식 등록)
-> Status: **371 Vitest tests · 7 routes · 21 lib modules · 25 scripts · 13 components · 4-layer safety net**
+> Status: **371 Vitest tests · 7 routes · 21 lib modules · 27 scripts · 13 components · 4-layer safety net**
 > Owner: [smilepat](https://github.com/smilepat) · 2026-05-24
 
 본 레포는 [LogicFlow EdTech 생태계](https://github.com/smilepat/myprojects)의 통합 구현체다. **신규 빌드가 아니라 기존 자산 통합 레이어**.
@@ -109,7 +109,7 @@ node scripts/calibrate.mjs --responses data/dogfood.json --min 100 --lambda 1.0 
 
 ---
 
-## 4. Scripts (25)
+## 4. Scripts (27)
 
 | 스크립트 | 역할 |
 |---|---|
