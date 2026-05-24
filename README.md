@@ -208,6 +208,8 @@ node scripts/calibrate.mjs --responses data/dogfood.json --min 100 --lambda 1.0 
 | **Tier 4.1 A11y baseline** | 100% (12/12 WCAG 2.1 AA — desktop + mobile) |
 | **vocab-cat-test 통합** | ✅ resolved (177 pytest, θ variance 0.03 → C1.2 measured PASS) |
 | **Vercel Production 배포** | ✅ 본인 완료 |
+| **Cloud Run vocab-cat-api 배포** | ✅ 2026-05-24 — `vocab-cat-api-452237528328.asia-northeast3.run.app` (1Gi/1cpu, allow-unauth, 9183 vocab, end-to-end 7/7 PASS) |
+| **Vercel env NEXT_PUBLIC_VOCAB_CAT_TEST_URL** | ✅ Production + Development 연결 → `/diagnose` fallback panel 자동 해제 |
 | dogfooding-1 | 30 응답 → C4.1 D2 over → rollback |
 | dogfooding-2 | 1230 응답 → C4.1 D3 under → rollback |
 | dogfooding-3 (preset 시뮬레이션) | 1600 응답 → C4.1 D5 over → rollback |
@@ -277,7 +279,7 @@ Supabase config 도착 시:
 - docs 보강 / cross-link refresh
 
 ### Stage B — 본인 1-2시간 결단
-- ☐ Cloud Run vocab-cat-test 배포 ([runbook](https://github.com/smilepat/myprojects/blob/main/docs/03-analysis/vocab-cat-test-cloudrun-runbook.md))
+- ✅ Cloud Run vocab-cat-test 배포 ([runbook](https://github.com/smilepat/myprojects/blob/main/docs/03-analysis/vocab-cat-test-cloudrun-runbook.md)) — 2026-05-24 완료
 - ☐ EBS-demo Firebase config (코드는 wired)
 - ☐ vocab-cat-test PR #2 merge (CORS 1줄, pending)
 
