@@ -1,6 +1,6 @@
 # OELP — Ontology English Learning Platform
 
-> Phase 1 MVP + P-1 Recommendation v2 + P-1.5 Bridge + P-2 EBS Foundation + v4 Adaptive Exploration + v5 Stage A 소진 + v8 Cloud Run 배포 + v9-v16 D1 plateau + 8 surfaces + 운영 모니터링 8 도구 + forgetting curve
+> Phase 1 MVP + P-1 Recommendation v2 + P-1.5 Bridge + P-2 EBS Foundation + v4 Adaptive Exploration + v5 Stage A 소진 + v8 Cloud Run 배포 + v9-v17 D1 plateau + 8 surfaces + 8 모니터링 도구 + 옵션 A' 3단계 정당화
 > Status: **379 Vitest tests · 7 routes · 21 lib modules · 30 scripts · 13 components · 4-layer safety net**
 > Owner: [smilepat](https://github.com/smilepat) · 2026-05-24
 
@@ -142,6 +142,7 @@ node scripts/calibrate.mjs --responses data/dogfood.json --min 100 --lambda 1.0 
 | `bundle-size-audit.mjs` | Next.js 16 Turbopack production bundle size 측정 (현 1.58MB, threshold 3MB 47% 마진) |
 | `dogfood-12-forgetting-curve.mjs` | Ebbinghaus forgetting 추가 24주 sim — D1 negative gap -72% finding (시간 차원 정당화) |
 | `c4-3-trend-cli.mjs` | lib/trend-analysis CLI 래퍼 — CI/cron에서 누적 데이터 직접 trend 분석 |
+| `dogfood-13-forgetting-plus-option-a-prime.mjs` | forgetting + 옵션 A' 결합 sim — D1 +113~160%p 회복, side effect 0, SAFE |
 
 ---
 
@@ -203,7 +204,7 @@ node scripts/calibrate.mjs --responses data/dogfood.json --min 100 --lambda 1.0 
 
 ---
 
-## 9. 진행 상황 종합 (2026-05-25 v16 sprint 종료 — forgetting curve + C4.3 CLI + 운영 도구 8)
+## 9. 진행 상황 종합 (2026-05-25 v17 sprint 종료 — 옵션 A' 시간 차원 정당화 3단계 완성)
 
 | Phase | 진행 |
 |---|---|
@@ -261,9 +262,11 @@ node scripts/calibrate.mjs --responses data/dogfood.json --min 100 --lambda 1.0 
 | **v15: QueuePlateauNotice + bundle-size-audit** | 8번째 자동 활성 surface (큐 D1 targeting + plateau 시 경고) + 운영 모니터링 도구 (현 1.58MB / 3MB 47% 마진) |
 | **v16: dogfood-12 forgetting curve** | 24주 Ebbinghaus sim → D1 **negative gap -72%** (학습 없음 + forgetting 누적 = 시간 갈수록 악화) → 옵션 A' PR 시간 차원 정당화 |
 | **v16: c4-3-trend-cli.mjs** | lib/trend-analysis CLI 래퍼. CI/cron에서 누적 데이터 직접 분석 가능. 운영 모니터링 도구 6→8 |
+| **v17: dogfood-13 forgetting + 옵션 A' 결합** | weak-D1/D2/D3에서 D1 **+113~160%p 회복**, side effect 0 → 시간 차원 정당화 **3 단계 완성** (plateau → negative gap → 회복) |
+| **v17: c4-3-trend-cli 8 contract tests** | sentinel (D1 slope=0) → 옵션 A' PR 후 자동 flip, CLI ↔ lib drift 보호 |
 
 상세:
-- 통합 회고: [`docs/04-report/oelp-integrated-summary.md`](https://github.com/smilepat/myprojects/blob/main/docs/04-report/oelp-integrated-summary.md) v16 (forgetting curve + 8 모니터링 도구)
+- 통합 회고: [`docs/04-report/oelp-integrated-summary.md`](https://github.com/smilepat/myprojects/blob/main/docs/04-report/oelp-integrated-summary.md) v17 (옵션 A' 3단계 정당화 완성)
 - Stability sprint: [`docs/04-report/stability-roadmap-tier-1-3-complete.md`](https://github.com/smilepat/myprojects/blob/main/docs/04-report/stability-roadmap-tier-1-3-complete.md)
 - Phase 2 PRD: [`docs/01-plan/prd-oelp-mvp-phase2.md`](https://github.com/smilepat/myprojects/blob/main/docs/01-plan/prd-oelp-mvp-phase2.md)
 - C4.1 게이트 3 cycle: [`docs/03-analysis/dogfooding-pass-{1,2,3}.md`](https://github.com/smilepat/myprojects/tree/main/docs/03-analysis)
