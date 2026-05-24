@@ -94,3 +94,34 @@ jobs:
         with:
           name: vocab-cat-test-uvicorn-log
           path: vocab-cat-test/uvicorn.log
+
+  cloud-run-smoke:
+    # Validates that the deployed Cloud Run instance is still healthy and
+    # serving the contract OELP expects. Independent of the local-spawn job
+    # above — catches drift in the deployed revision (image rebuilds, env
+    # var changes, GCP quota issues) that local CI cannot see.
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    continue-on-error: true  # don't block weekly cycle if Cloud Run is down
+
+    steps:
+      - name: Checkout OELP
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Probe Cloud Run /health
+        run: |
+          curl -fs https://vocab-cat-api-452237528328.asia-northeast3.run.app/health | tee health.json
+          jq -e '.status == "healthy" and .vocab_count == 9183' health.json
+
+      - name: Run integration verify against Cloud Run
+        env:
+          VOCAB_CAT_TEST_URL: https://vocab-cat-api-452237528328.asia-northeast3.run.app
+        run: node scripts/verify-vocab-cat-test.mjs
