@@ -1,7 +1,7 @@
 # OELP — Ontology English Learning Platform
 
-> Phase 1 MVP + P-1 Recommendation v2 + P-1.5 Bridge + P-2 EBS Foundation + v4 Adaptive Exploration + v5 Stage A 소진 + v8 Cloud Run 배포 + v9-v15 D1 plateau + 8 surfaces + 운영 모니터링 6 도구
-> Status: **371 Vitest tests · 7 routes · 21 lib modules · 27 scripts · 13 components · 4-layer safety net**
+> Phase 1 MVP + P-1 Recommendation v2 + P-1.5 Bridge + P-2 EBS Foundation + v4 Adaptive Exploration + v5 Stage A 소진 + v8 Cloud Run 배포 + v9-v16 D1 plateau + 8 surfaces + 운영 모니터링 8 도구 + forgetting curve
+> Status: **371 Vitest tests · 7 routes · 21 lib modules · 29 scripts · 13 components · 4-layer safety net**
 > Owner: [smilepat](https://github.com/smilepat) · 2026-05-24
 
 본 레포는 [LogicFlow EdTech 생태계](https://github.com/smilepat/myprojects)의 통합 구현체다. **신규 빌드가 아니라 기존 자산 통합 레이어**.
@@ -109,7 +109,7 @@ node scripts/calibrate.mjs --responses data/dogfood.json --min 100 --lambda 1.0 
 
 ---
 
-## 4. Scripts (27)
+## 4. Scripts (29)
 
 | 스크립트 | 역할 |
 |---|---|
@@ -140,6 +140,8 @@ node scripts/calibrate.mjs --responses data/dogfood.json --min 100 --lambda 1.0 
 | `dogfood-10-option-a-prime-matrix.mjs` | 옵션 A' 적용 시 5×5 matrix 변화 사전 측정 (production weight in-memory override, SAFE verdict 자동 출력) |
 | `dogfood-11-weight-sensitivity.mjs` | 5 dim weight sensitivity 시뮬 — D1만 MAJOR, 다른 dim SAFE (미래 PR 안전 가이드) |
 | `bundle-size-audit.mjs` | Next.js 16 Turbopack production bundle size 측정 (현 1.58MB, threshold 3MB 47% 마진) |
+| `dogfood-12-forgetting-curve.mjs` | Ebbinghaus forgetting 추가 24주 sim — D1 negative gap -72% finding (시간 차원 정당화) |
+| `c4-3-trend-cli.mjs` | lib/trend-analysis CLI 래퍼 — CI/cron에서 누적 데이터 직접 trend 분석 |
 
 ---
 
@@ -201,7 +203,7 @@ node scripts/calibrate.mjs --responses data/dogfood.json --min 100 --lambda 1.0 
 
 ---
 
-## 9. 진행 상황 종합 (2026-05-25 v15 sprint 종료 — 미래 PR 안전 가이드 + 8 surfaces + 운영 도구 누적)
+## 9. 진행 상황 종합 (2026-05-25 v16 sprint 종료 — forgetting curve + C4.3 CLI + 운영 도구 8)
 
 | Phase | 진행 |
 |---|---|
@@ -257,9 +259,11 @@ node scripts/calibrate.mjs --responses data/dogfood.json --min 100 --lambda 1.0 
 | **v14: /map UI D1 indicator** | 선택된 QT의 derived D1 = 0% 시 옵션 A' PR 권장 메시지 자동 표시. 6 층위 정합성 (PRD/시뮬/도구/실 UI/탐색 UI/설계) |
 | **v15: dogfood-11 weight sensitivity** | 5 dim 각 +0.15 boost 시뮬 → D1만 MAJOR, 다른 dim SAFE (효과 미미). 미래 가중치 조정 PR 안전 가이드 |
 | **v15: QueuePlateauNotice + bundle-size-audit** | 8번째 자동 활성 surface (큐 D1 targeting + plateau 시 경고) + 운영 모니터링 도구 (현 1.58MB / 3MB 47% 마진) |
+| **v16: dogfood-12 forgetting curve** | 24주 Ebbinghaus sim → D1 **negative gap -72%** (학습 없음 + forgetting 누적 = 시간 갈수록 악화) → 옵션 A' PR 시간 차원 정당화 |
+| **v16: c4-3-trend-cli.mjs** | lib/trend-analysis CLI 래퍼. CI/cron에서 누적 데이터 직접 분석 가능. 운영 모니터링 도구 6→8 |
 
 상세:
-- 통합 회고: [`docs/04-report/oelp-integrated-summary.md`](https://github.com/smilepat/myprojects/blob/main/docs/04-report/oelp-integrated-summary.md) v15 (8 surfaces + 6 모니터링 도구)
+- 통합 회고: [`docs/04-report/oelp-integrated-summary.md`](https://github.com/smilepat/myprojects/blob/main/docs/04-report/oelp-integrated-summary.md) v16 (forgetting curve + 8 모니터링 도구)
 - Stability sprint: [`docs/04-report/stability-roadmap-tier-1-3-complete.md`](https://github.com/smilepat/myprojects/blob/main/docs/04-report/stability-roadmap-tier-1-3-complete.md)
 - Phase 2 PRD: [`docs/01-plan/prd-oelp-mvp-phase2.md`](https://github.com/smilepat/myprojects/blob/main/docs/01-plan/prd-oelp-mvp-phase2.md)
 - C4.1 게이트 3 cycle: [`docs/03-analysis/dogfooding-pass-{1,2,3}.md`](https://github.com/smilepat/myprojects/tree/main/docs/03-analysis)
