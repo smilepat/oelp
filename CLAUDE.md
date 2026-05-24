@@ -217,3 +217,4 @@ vocab-cat-test (semantic/contextual/form/relational/pragmatic) ↔ OELP (D2/D3/D
 - 2026-05-24 v5-v7: Stage A 백로그 소진 (mock script / dogfood-7 / CalibrationEventSync / coverage 97.79%) + 6번째 closed-loop 확정
 - 2026-05-24 v8: **Cloud Run 배포 완료** (asia-northeast3, 7/7 PASS) + Vercel env wiring + cloud-run-smoke CI (11번째 gate) + EBS 옵션 B 재정의 (1-2일 PR)
 - 2026-05-24 v9: dogfood-8 다중 archetype + 옵션 A 정량 검증 → **D1_Form plateau가 5 archetype 모두에서 0%** + 옵션 A1 (TYPE-제목 weight 0.05→0.20) **66-70% 회복** 입증 → 7번째 closed-loop 후보 PR ready
+- 2026-05-24 v10: **C4.1 게이트가 옵션 A1 단독을 거부** ("선언만 있고 keyVariables 근거 없음") → 안전망 가치 정량 입증 + 옵션 A' 정식 설계 (4 파일 동시 PR — keyVariables 신규 3개 + weight) + weak-D1 archetype 추가로 A3 D5 약화 부작용 발견 → A1 single 안전성 재확인
