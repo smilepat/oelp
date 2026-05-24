@@ -42,6 +42,14 @@ jobs:
       - name: README counter freshness (T2.1)
         run: node scripts/update-readme-counters.mjs --check
 
+      - name: Dim coverage check (v11 — keyVariable 매핑 진단)
+        # Detects hidden defects like D1_Form having 0 keyVariables (v10 finding).
+        # Currently exits 1 (D1_Form MISSING) — accepted state until option A' PR.
+        # Use --strict to escalate "declared without evidence" to fail. Once
+        # option A' lands the script will exit 0 → flip continue-on-error to false.
+        continue-on-error: true
+        run: node scripts/check-dim-coverage.mjs
+
       - name: C4.1 dimension-mapping regression
         run: |
           mkdir -p out
