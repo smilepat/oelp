@@ -1,6 +1,6 @@
 # OELP — Ontology English Learning Platform
 
-> Phase 1 MVP + P-1 Recommendation v2 + P-1.5 Bridge + P-2 EBS Foundation + v4 Adaptive Exploration
+> Phase 1 MVP + P-1 Recommendation v2 + P-1.5 Bridge + P-2 EBS Foundation + v4 Adaptive Exploration + v5 Stage A 소진
 > Status: **319 Vitest tests · 7 routes · 20 lib modules · 18 scripts · 11 components · 4-layer safety net**
 > Owner: [smilepat](https://github.com/smilepat) · 2026-05-24
 
@@ -192,7 +192,7 @@ node scripts/calibrate.mjs --responses data/dogfood.json --min 100 --lambda 1.0 
 
 ---
 
-## 9. 진행 상황 종합 (2026-05-24 v4 sprint 종료)
+## 9. 진행 상황 종합 (2026-05-24 v5 sprint 종료)
 
 | Phase | 진행 |
 |---|---|
@@ -218,9 +218,14 @@ node scripts/calibrate.mjs --responses data/dogfood.json --min 100 --lambda 1.0 
 | **v4: R5 fix — adaptive threshold** | `max(20, mean × 0.3)` — dogfood-6로 balance 10배 회복 검증 (0.030→0.303) |
 | **v4: closed-loop iterations** | **5 cycle 누적** (Tier 1-3 → λ schedule → exploration → adaptive prep → adaptive verification) |
 | **v4: analytics events 인프라** | `lib/analytics-events.ts` (11 types) + AnalyticsQueuePanel (`/sessions`) — Supabase config 대기 |
+| **v5: queue.item_answered wiring** | /queue submit() 즉시 emit → 11 이벤트 자율 wiring **11/11 완료** (auth/calibration만 Supabase 대기 종속) |
+| **v5: SessionAccuracyTrend sparkline** | C4.3 UI **실측 활성** — ≥2 세션부터 linear slope + ARIA, 5번째 closed-loop |
+| **v5: error-log 100% lines coverage** | SSR 5건 + 비-배열 storage branch → 100/96.15/100/100 |
+| **v5: AdaptiveDiagnosticStats (A8)** | /diagnose θ 추이 sparkline + KR1.1 (SD ≤ 0.3) + KR1.2 (≤ 25문항) badge + 최근 5건 |
+| **v5: Stage A 백로그 소진** | 자율 가능한 6개 모두 완료 또는 Supabase 종속으로 분리. 다음 자율: coverage gap / mock script / dogfood-7 |
 
 상세:
-- 통합 회고: [`docs/04-report/oelp-integrated-summary.md`](https://github.com/smilepat/myprojects/blob/main/docs/04-report/oelp-integrated-summary.md) v4
+- 통합 회고: [`docs/04-report/oelp-integrated-summary.md`](https://github.com/smilepat/myprojects/blob/main/docs/04-report/oelp-integrated-summary.md) v5
 - Stability sprint: [`docs/04-report/stability-roadmap-tier-1-3-complete.md`](https://github.com/smilepat/myprojects/blob/main/docs/04-report/stability-roadmap-tier-1-3-complete.md)
 - Phase 2 PRD: [`docs/01-plan/prd-oelp-mvp-phase2.md`](https://github.com/smilepat/myprojects/blob/main/docs/01-plan/prd-oelp-mvp-phase2.md)
 - C4.1 게이트 3 cycle: [`docs/03-analysis/dogfooding-pass-{1,2,3}.md`](https://github.com/smilepat/myprojects/tree/main/docs/03-analysis)
@@ -252,13 +257,23 @@ Supabase config 도착 시:
 
 ## 10. Phase 2 백로그 (v2 — Stage A/B/C/D)
 
-### Stage A — Claude 자율 가능 (즉시)
-- C4.3 trend UI 통합 (lib/trend-analysis.ts 준비됨)
-- A8 `/diagnose` vocab-cat-test 통계 위젯
-- regression-history 검색/필터 (events 8건+ 누적 후)
-- error-log mock test 추가로 coverage → 100%
-- **v4: AdaptiveQueuePanel v2** — Supabase 연결 시 sync 카운터/버튼
-- **v4: queue.item_answered wiring** — `/queue` 카드 답변 즉시 logEvent
+### Stage A — Claude 자율 가능 (v5 시점 사실상 소진 ☑️)
+
+**기존 명목 항목 모두 완료**:
+
+- ✅ C4.3 trend UI 통합 → v5: SessionAccuracyTrend sparkline (≥2 세션 즉시 활성)
+- ✅ A8 `/diagnose` vocab-cat-test 통계 위젯 → v5: AdaptiveDiagnosticStats
+- ✅ regression-history 검색/필터 → v2 sprint에서 완료
+- ✅ error-log coverage 100% lines → v5: SSR-safety + 비-배열 storage branch
+- ✅ queue.item_answered wiring → v5
+- ⏸️ AdaptiveQueuePanel v2 — Supabase config 도착 후 자동 발생 (Stage B 종속)
+
+**v5 시점 새 자율 후보** (필요 시):
+
+- coverage 다음 gap: `lib/diagnostic.ts` 60% lines + `lib/analytics-events.ts` downloadEventQueue
+- `scripts/mock-vocab-cat-test.mjs` — FastAPI 부재 시 offline dogfooding 가능하게
+- `dogfood-7` — multi-learner cohort sim (Stage C forecast 정밀화)
+- docs 보강 / cross-link refresh
 
 ### Stage B — 본인 1-2시간 결단
 - ☐ Cloud Run vocab-cat-test 배포 ([runbook](https://github.com/smilepat/myprojects/blob/main/docs/03-analysis/vocab-cat-test-cloudrun-runbook.md))
