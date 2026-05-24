@@ -186,4 +186,47 @@ describe("content-validators (Phase 2 P-2)", () => {
     const result = validateCardBatch(cards);
     expect(result.issues.some((i) => i.code === "V12_DUPLICATE_STEM")).toBe(false);
   });
+
+  // v11 sprint — coverage push: V3 non-number + V6 IRT param edge cases
+
+  test("V3: answerIdx string (not number) → V3_ANSWER_NOT_NUMBER", () => {
+    const card = makeValidCard();
+    // @ts-expect-error — invalid type for V3 coverage
+    card.answerIdx = "1";
+    const issues = validateCard(card);
+    expect(issues.some((i) => i.code === "V3_ANSWER_NOT_NUMBER")).toBe(true);
+  });
+
+  test("V3: answerIdx non-integer (1.5) → V3_ANSWER_OUT_OF_RANGE", () => {
+    const issues = validateCard(makeValidCard({ answerIdx: 1.5 }));
+    expect(issues.some((i) => i.code === "V3_ANSWER_OUT_OF_RANGE")).toBe(true);
+  });
+
+  test("V6: difficulty string (not number) → V6_DIFFICULTY_NOT_NUMBER", () => {
+    const card = makeValidCard();
+    // @ts-expect-error — invalid type for V6 coverage
+    card.difficulty = "0.5";
+    const issues = validateCard(card);
+    expect(issues.some((i) => i.code === "V6_DIFFICULTY_NOT_NUMBER")).toBe(true);
+  });
+
+  test("V6: discrimination NaN → V6_DISCRIMINATION_NOT_NUMBER", () => {
+    const issues = validateCard(makeValidCard({ discrimination: NaN }));
+    expect(issues.some((i) => i.code === "V6_DISCRIMINATION_NOT_NUMBER")).toBe(true);
+  });
+
+  test("V6: discrimination Infinity → V6_DISCRIMINATION_NOT_NUMBER", () => {
+    const issues = validateCard(makeValidCard({ discrimination: Infinity }));
+    expect(issues.some((i) => i.code === "V6_DISCRIMINATION_NOT_NUMBER")).toBe(true);
+  });
+
+  test("V6: discrimination below IRT range (0.3) → V6_DISCRIMINATION_OUT_OF_RANGE", () => {
+    const issues = validateCard(makeValidCard({ discrimination: 0.3 }));
+    expect(issues.some((i) => i.code === "V6_DISCRIMINATION_OUT_OF_RANGE")).toBe(true);
+  });
+
+  test("V6: discrimination above IRT range (3.0) → V6_DISCRIMINATION_OUT_OF_RANGE", () => {
+    const issues = validateCard(makeValidCard({ discrimination: 3.0 }));
+    expect(issues.some((i) => i.code === "V6_DISCRIMINATION_OUT_OF_RANGE")).toBe(true);
+  });
 });
