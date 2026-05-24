@@ -1,6 +1,6 @@
 # OELP — Ontology English Learning Platform
 
-> Phase 1 MVP + P-1 Recommendation v2 + P-1.5 Bridge + P-2 EBS Foundation + v4 Adaptive Exploration + v5 Stage A 소진 + v8 Cloud Run 배포 + v9-v13 D1 plateau + 옵션 A' 4중 안전성
+> Phase 1 MVP + P-1 Recommendation v2 + P-1.5 Bridge + P-2 EBS Foundation + v4 Adaptive Exploration + v5 Stage A 소진 + v8 Cloud Run 배포 + v9-v14 D1 plateau + 옵션 A' 5중 안전성 (PRD R6 정식 등록)
 > Status: **371 Vitest tests · 7 routes · 21 lib modules · 25 scripts · 13 components · 4-layer safety net**
 > Owner: [smilepat](https://github.com/smilepat) · 2026-05-24
 
@@ -199,7 +199,7 @@ node scripts/calibrate.mjs --responses data/dogfood.json --min 100 --lambda 1.0 
 
 ---
 
-## 9. 진행 상황 종합 (2026-05-24 v13 sprint 종료 — 옵션 A' 4중 안전성 + 학습자 도착 시 자동 활성 UI)
+## 9. 진행 상황 종합 (2026-05-25 v14 sprint 종료 — PRD R6 정식 등록 + 6 층위 정합성)
 
 | Phase | 진행 |
 |---|---|
@@ -251,9 +251,11 @@ node scripts/calibrate.mjs --responses data/dogfood.json --min 100 --lambda 1.0 
 | **v13: dogfood-10 옵션 A' 효과 사전 측정** | production weight in-memory override → D1 +66-81%p 회복, D3 dominant -3%p, 다른 dim 변동 0 → **SAFE verdict** |
 | **v13: PlateauWarningPanel** (`/sessions`) | 13번째 component, 학습자 4주+ 누적 시 자동 활성, D1 plateau 발견 시 옵션 A' PR 권장 메시지 + 설계 문서 링크 |
 | **v13: 옵션 A' 4중 안전성 확보** | 시뮬 (simulate) / 매트릭스 (dogfood-10) / 실 검증 (PlateauWarningPanel) / CI gate (check-dim-coverage) — 본인 PR risk-free |
+| **v14: Phase 2 PRD R6 정식 등록** | D1_Form structural defect를 PRD R6로 추가 (myprojects), R4 EBS 정정 — **5중 안전성** (PRD 정식 등록 추가) |
+| **v14: /map UI D1 indicator** | 선택된 QT의 derived D1 = 0% 시 옵션 A' PR 권장 메시지 자동 표시. 6 층위 정합성 (PRD/시뮬/도구/실 UI/탐색 UI/설계) |
 
 상세:
-- 통합 회고: [`docs/04-report/oelp-integrated-summary.md`](https://github.com/smilepat/myprojects/blob/main/docs/04-report/oelp-integrated-summary.md) v13 (4중 안전성)
+- 통합 회고: [`docs/04-report/oelp-integrated-summary.md`](https://github.com/smilepat/myprojects/blob/main/docs/04-report/oelp-integrated-summary.md) v14 (PRD R6 + 6 층위 정합성)
 - Stability sprint: [`docs/04-report/stability-roadmap-tier-1-3-complete.md`](https://github.com/smilepat/myprojects/blob/main/docs/04-report/stability-roadmap-tier-1-3-complete.md)
 - Phase 2 PRD: [`docs/01-plan/prd-oelp-mvp-phase2.md`](https://github.com/smilepat/myprojects/blob/main/docs/01-plan/prd-oelp-mvp-phase2.md)
 - C4.1 게이트 3 cycle: [`docs/03-analysis/dogfooding-pass-{1,2,3}.md`](https://github.com/smilepat/myprojects/tree/main/docs/03-analysis)
