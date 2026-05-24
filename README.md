@@ -1,6 +1,6 @@
 # OELP — Ontology English Learning Platform
 
-> Phase 1 MVP + P-1 Recommendation v2 + P-1.5 Bridge + P-2 EBS Foundation + v4 Adaptive Exploration + v5 Stage A 소진
+> Phase 1 MVP + P-1 Recommendation v2 + P-1.5 Bridge + P-2 EBS Foundation + v4 Adaptive Exploration + v5 Stage A 소진 + v8 Cloud Run 배포
 > Status: **342 Vitest tests · 7 routes · 20 lib modules · 20 scripts · 12 components · 4-layer safety net**
 > Owner: [smilepat](https://github.com/smilepat) · 2026-05-24
 
@@ -193,7 +193,7 @@ node scripts/calibrate.mjs --responses data/dogfood.json --min 100 --lambda 1.0 
 
 ---
 
-## 9. 진행 상황 종합 (2026-05-24 v5 sprint 종료)
+## 9. 진행 상황 종합 (2026-05-24 v8 sprint 종료 — Stage B 진입)
 
 | Phase | 진행 |
 |---|---|
@@ -203,7 +203,7 @@ node scripts/calibrate.mjs --responses data/dogfood.json --min 100 --lambda 1.0 
 | P-1.5 Bridge | 100% (1 week) |
 | P-1.5b Varied Diagnostic + preset UI | 100% |
 | P-2 EBS Content Foundation | 100% (6 weeks) |
-| **P-2 W7 EBS real wiring** | 100% (코드 완료, Firebase config 본인 잔여) |
+| **P-2 W7 EBS wiring** | stub 수준 (v8 발견: contract mismatch + 인증 + 도메인 mismatch 3건 — [gap 분석](https://github.com/smilepat/myprojects/blob/main/docs/03-analysis/ebs-demo-integration-gap.md), adapter PR 1-2일 필요) |
 | **Tier 1-3 Stability Roadmap** | 100% (7 작업 — schemas, write-protect, auto-sync, dependabot) |
 | **Tier 4.1 A11y baseline** | 100% (12/12 WCAG 2.1 AA — desktop + mobile) |
 | **vocab-cat-test 통합** | ✅ resolved (177 pytest, θ variance 0.03 → C1.2 measured PASS) |
@@ -226,9 +226,17 @@ node scripts/calibrate.mjs --responses data/dogfood.json --min 100 --lambda 1.0 
 | **v5: error-log 100% lines coverage** | SSR 5건 + 비-배열 storage branch → 100/96.15/100/100 |
 | **v5: AdaptiveDiagnosticStats (A8)** | /diagnose θ 추이 sparkline + KR1.1 (SD ≤ 0.3) + KR1.2 (≤ 25문항) badge + 최근 5건 |
 | **v5: Stage A 백로그 소진** | 자율 가능한 6개 모두 완료 또는 Supabase 종속으로 분리. 다음 자율: coverage gap / mock script / dogfood-7 |
+| **v6: mock-vocab-cat-test FastAPI stub** | offline dogfooding 가능 (CORS + seeded RNG + 7 contract tests). [가이드](https://github.com/smilepat/myprojects/blob/main/docs/03-analysis/dogfooding-without-backend.md) |
+| **v7: dogfood-7 cohort forecast** | N=10/30/50 시뮬 6 seed 교차. baseline 4-8/10 → **exploration on 10/10 모든 seed**. 6번째 closed-loop 확정 ([analysis](https://github.com/smilepat/myprojects/blob/main/docs/03-analysis/dogfooding-7-cohort-forecast.md)) |
+| **v7: CalibrationEventSync** | regression-history → analytics queue mirror. **11/11 analytics events 자율 wiring 완성** |
+| **v7: coverage push** | diagnostic.ts 60→100%, analytics-events 76→100%, content-generator 89→96% lines. 전체 97.79% |
+| **v8: Cloud Run 배포 ✅** | `vocab-cat-api-452237528328.asia-northeast3.run.app` (1Gi/1cpu, 9183 vocab, 7/7 PASS). Stage B-1 완료 |
+| **v8: Vercel env wiring + redeploy** | `NEXT_PUBLIC_VOCAB_CAT_TEST_URL` Production+Development. `oelp-phi.vercel.app` /diagnose fallback panel 해제 |
+| **v8: cloud-run-smoke CI job** | Sunday 03:00 UTC + workflow_dispatch. Cloud Run /health + verify-vocab-cat-test 자동. **11번째 CI gate** |
+| **v8: 6번째 closed-loop 확정** | cohort exploration policy 영구화 (forecast → empirical 검증 → policy) |
 
 상세:
-- 통합 회고: [`docs/04-report/oelp-integrated-summary.md`](https://github.com/smilepat/myprojects/blob/main/docs/04-report/oelp-integrated-summary.md) v5
+- 통합 회고: [`docs/04-report/oelp-integrated-summary.md`](https://github.com/smilepat/myprojects/blob/main/docs/04-report/oelp-integrated-summary.md) v8 (Stage B 진입)
 - Stability sprint: [`docs/04-report/stability-roadmap-tier-1-3-complete.md`](https://github.com/smilepat/myprojects/blob/main/docs/04-report/stability-roadmap-tier-1-3-complete.md)
 - Phase 2 PRD: [`docs/01-plan/prd-oelp-mvp-phase2.md`](https://github.com/smilepat/myprojects/blob/main/docs/01-plan/prd-oelp-mvp-phase2.md)
 - C4.1 게이트 3 cycle: [`docs/03-analysis/dogfooding-pass-{1,2,3}.md`](https://github.com/smilepat/myprojects/tree/main/docs/03-analysis)
@@ -280,7 +288,7 @@ Supabase config 도착 시:
 
 ### Stage B — 본인 1-2시간 결단
 - ✅ Cloud Run vocab-cat-test 배포 ([runbook](https://github.com/smilepat/myprojects/blob/main/docs/03-analysis/vocab-cat-test-cloudrun-runbook.md)) — 2026-05-24 완료
-- ☐ EBS-demo Firebase config (코드는 wired)
+- ⚠️ ~~EBS-demo Firebase config (코드는 wired)~~ — v8 발견: stub 수준. [gap 분석](https://github.com/smilepat/myprojects/blob/main/docs/03-analysis/ebs-demo-integration-gap.md), adapter PR 1-2일 필요
 - ☐ vocab-cat-test PR #2 merge (CORS 1줄, pending)
 
 ### Stage C — 학습자 채널 의존 (현재 0명 → ≥1명 활성화)
