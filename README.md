@@ -211,7 +211,7 @@ node scripts/calibrate.mjs --responses data/dogfood.json --min 100 --lambda 1.0 
 | dogfooding-2 | 1230 응답 → C4.1 D3 under → rollback |
 | dogfooding-3 (preset 시뮬레이션) | 1600 응답 → C4.1 D5 over → rollback |
 | **λ schedule (auto-lambda)** | N-dependent (N<100→2.0, ..., >10k→0.5) |
-| **C4.3 trend infra** | scaffolded (10 unit tests, UI 통합 대기) |
+| **C4.3 trend UI 통합** | TrendPanel + SessionAccuracyTrend sparkline (≥2 세션 활성, slope 회귀, /sessions wired) |
 | **Stage C 활성화 forecasting** | 외부 1명만으론 게이트 FAIL 지속, 50% 비율 시 PASS 가능성 forecast |
 | **v4: exploration target (P-1 W9)** | `findExplorationTarget` Fisher Info — dogfood-4로 검증 |
 | **v4: shouldExplore policy** | balance-aware (b<0.1: every 2nd, b<0.5: every 4th) + R5 long-run 발견 |

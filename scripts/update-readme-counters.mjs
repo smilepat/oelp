@@ -78,12 +78,25 @@ export function countScripts() {
   return count;
 }
 
+export function countComponents() {
+  const dir = join(ROOT, "components");
+  let count = 0;
+  try {
+    for (const entry of readdirSync(dir)) {
+      if (entry.endsWith(".tsx")) count++;
+    }
+  } catch {
+    return 0;
+  }
+  return count;
+}
+
 // ─── Updater ─────────────────────────────────────────────────────────
 
 const README_PATH = join(ROOT, "README.md");
 
 function buildExpectedBadge(counts) {
-  return `${counts.tests} Vitest tests · ${counts.routes} routes · ${counts.libModules} lib modules · 4-layer safety net`;
+  return `${counts.tests} Vitest tests · ${counts.routes} routes · ${counts.libModules} lib modules · ${counts.scripts} scripts · ${counts.components} components · 4-layer safety net`;
 }
 
 function buildExpectedTestsRef(counts) {
@@ -99,7 +112,7 @@ function buildExpectedTestSummary(counts) {
 const REPLACEMENTS = [
   {
     name: "header-badge",
-    pattern: /(\d+ Vitest tests · \d+ routes · \d+ lib modules · 4-layer safety net)/,
+    pattern: /(\d+ Vitest tests · \d+ routes · \d+ lib modules · \d+ scripts · \d+ components · 4-layer safety net)/,
     build: buildExpectedBadge,
   },
   {
@@ -142,6 +155,7 @@ function snapshotCounts() {
     routes: countRoutes(),
     libModules: countLibModules(),
     scripts: countScripts(),
+    components: countComponents(),
   };
 }
 
