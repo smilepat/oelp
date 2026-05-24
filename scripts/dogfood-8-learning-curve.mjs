@@ -64,18 +64,48 @@ function rng() {
 
 const DIMS = ["D1_Form", "D2_Meaning", "D3_Context", "D4_Network", "D5_Usage"];
 
-// Learner profile — weak-D2 archetype (가장 흔한 EFL 패턴)
-const learner = {
-  id: "lc-001",
-  archetype: "weak-D2",
-  baseDims: { D1_Form: 60, D2_Meaning: 30, D3_Context: 55, D4_Network: 60, D5_Usage: 55 },
-  // 도달 가능한 천장 (학습 큐가 targeting 했을 때)
-  targetDims: { D1_Form: 85, D2_Meaning: 80, D3_Context: 85, D4_Network: 80, D5_Usage: 80 },
-  // tau (sessions to reach ~63% of gap closure)
-  tauDims: { D1_Form: 20, D2_Meaning: 18, D3_Context: 25, D4_Network: 22, D5_Usage: 24 },
+// 5 archetype profiles. CLI: --archetype weak-D2|weak-D3|weak-D4|balanced|strong|all
+const ARCHETYPES = {
+  "weak-D2": {
+    baseDims: { D1_Form: 60, D2_Meaning: 30, D3_Context: 55, D4_Network: 60, D5_Usage: 55 },
+    targetDims: { D1_Form: 85, D2_Meaning: 80, D3_Context: 85, D4_Network: 80, D5_Usage: 80 },
+    tauDims: { D1_Form: 20, D2_Meaning: 18, D3_Context: 25, D4_Network: 22, D5_Usage: 24 },
+  },
+  "weak-D3": {
+    baseDims: { D1_Form: 60, D2_Meaning: 55, D3_Context: 30, D4_Network: 60, D5_Usage: 55 },
+    targetDims: { D1_Form: 85, D2_Meaning: 80, D3_Context: 80, D4_Network: 80, D5_Usage: 80 },
+    tauDims: { D1_Form: 20, D2_Meaning: 22, D3_Context: 18, D4_Network: 22, D5_Usage: 24 },
+  },
+  "weak-D4": {
+    baseDims: { D1_Form: 60, D2_Meaning: 55, D3_Context: 55, D4_Network: 30, D5_Usage: 55 },
+    targetDims: { D1_Form: 85, D2_Meaning: 80, D3_Context: 80, D4_Network: 80, D5_Usage: 80 },
+    tauDims: { D1_Form: 20, D2_Meaning: 22, D3_Context: 25, D4_Network: 18, D5_Usage: 24 },
+  },
+  balanced: {
+    baseDims: { D1_Form: 55, D2_Meaning: 55, D3_Context: 55, D4_Network: 55, D5_Usage: 55 },
+    targetDims: { D1_Form: 85, D2_Meaning: 80, D3_Context: 80, D4_Network: 80, D5_Usage: 80 },
+    tauDims: { D1_Form: 20, D2_Meaning: 22, D3_Context: 22, D4_Network: 22, D5_Usage: 22 },
+  },
+  strong: {
+    baseDims: { D1_Form: 75, D2_Meaning: 75, D3_Context: 75, D4_Network: 75, D5_Usage: 75 },
+    targetDims: { D1_Form: 90, D2_Meaning: 90, D3_Context: 90, D4_Network: 90, D5_Usage: 90 },
+    tauDims: { D1_Form: 25, D2_Meaning: 25, D3_Context: 25, D4_Network: 25, D5_Usage: 25 },
+  },
 };
 
-const WEIGHTS = {
+const archetypeArg = args.archetype ?? "weak-D2";
+const archetypesToRun = archetypeArg === "all" ? Object.keys(ARCHETYPES) : [archetypeArg];
+
+function makeLearner(archetype) {
+  if (!ARCHETYPES[archetype]) throw new Error(`Unknown archetype: ${archetype}`);
+  return {
+    id: `lc-${archetype}`,
+    archetype,
+    ...ARCHETYPES[archetype],
+  };
+}
+
+const BASELINE_WEIGHTS = {
   "TYPE-목적":   { D1_Form: 0.05, D2_Meaning: 0.10, D3_Context: 0.50, D4_Network: 0.10, D5_Usage: 0.25 },
   "TYPE-심경":   { D1_Form: 0.05, D2_Meaning: 0.35, D3_Context: 0.40, D4_Network: 0.10, D5_Usage: 0.10 },
   "TYPE-주장":   { D1_Form: 0.05, D2_Meaning: 0.10, D3_Context: 0.55, D4_Network: 0.10, D5_Usage: 0.20 },
@@ -87,6 +117,46 @@ const WEIGHTS = {
   "TYPE-순서배열": { D1_Form: 0.05, D2_Meaning: 0.10, D3_Context: 0.45, D4_Network: 0.10, D5_Usage: 0.30 },
   "TYPE-문장삽입": { D1_Form: 0.05, D2_Meaning: 0.15, D3_Context: 0.45, D4_Network: 0.10, D5_Usage: 0.25 },
 };
+
+/**
+ * Option A simulation: boost D1_Form weight in selected QT(s).
+ * --d1-boost: "none" (default) | "single" (제목 only) | "form-pair" (제목 + 흐름무관) | "all" (all 10 QTs)
+ * Boosted weight applied: 0.20 to selected QT(s) for D1_Form.
+ * Other dims renormalized so each QT weights still sum to 1.0.
+ *
+ * Production weights remain untouched — this is simulation only.
+ */
+const d1BoostMode = args["d1-boost"] ?? "none";
+const D1_BOOST_VALUE = args["d1-boost-value"] ? parseFloat(args["d1-boost-value"]) : 0.20;
+
+function buildBoostedWeights(mode, boostValue) {
+  if (mode === "none") return BASELINE_WEIGHTS;
+  let qtsToBoost;
+  if (mode === "single") qtsToBoost = ["TYPE-제목"];
+  else if (mode === "form-pair") qtsToBoost = ["TYPE-제목", "TYPE-흐름무관"];
+  else if (mode === "all") qtsToBoost = Object.keys(BASELINE_WEIGHTS);
+  else throw new Error(`Unknown d1-boost mode: ${mode}`);
+
+  const result = {};
+  for (const [qt, w] of Object.entries(BASELINE_WEIGHTS)) {
+    if (!qtsToBoost.includes(qt)) {
+      result[qt] = { ...w };
+      continue;
+    }
+    // Boost D1_Form, renormalize other dims so total = 1.0
+    const otherDims = DIMS.filter((d) => d !== "D1_Form");
+    const otherSum = otherDims.reduce((s, d) => s + w[d], 0);
+    const remainingTotal = 1 - boostValue;
+    const newWeights = { D1_Form: boostValue };
+    for (const d of otherDims) {
+      newWeights[d] = +(w[d] * (remainingTotal / otherSum)).toFixed(3);
+    }
+    result[qt] = newWeights;
+  }
+  return result;
+}
+
+const WEIGHTS = buildBoostedWeights(d1BoostMode, D1_BOOST_VALUE);
 const QT_IDS = Object.keys(WEIGHTS);
 
 function pickTargetQT(dims) {
@@ -105,7 +175,7 @@ function pickTargetQT(dims) {
  * For each dimension that the chosen QT exercises (weight > 0.15),
  * advance dim_score toward target by step size dependent on tau.
  */
-function applyLearning(dims, qtId, exposures) {
+function applyLearning(dims, qtId, exposures, learner) {
   const w = WEIGHTS[qtId];
   const updated = { ...dims };
   for (const d of DIMS) {
@@ -133,35 +203,35 @@ function pickStarvedQT(qtCount, excludeQt) {
   return best;
 }
 
-// ─── Run simulation ────────────────────────────────────────────────────
+// ─── Run simulation (per archetype) ───────────────────────────────────
 
-let currentDims = { ...learner.baseDims };
-const exposures = {}; // per-dim cumulative exposure
-const qtCount = Object.fromEntries(QT_IDS.map((qt) => [qt, 0]));
+function runSimulation(learner) {
+  let currentDims = { ...learner.baseDims };
+  const exposures = {};
+  const qtCount = Object.fromEntries(QT_IDS.map((qt) => [qt, 0]));
+  const trajectory = [];
+  let sessionN = 0;
 
-const trajectory = []; // snapshot per session
-const totalSessions = weeks * sessionsPerWeek;
-let sessionN = 0;
-
-for (let w = 0; w < weeks; w++) {
-  for (let s = 0; s < sessionsPerWeek; s++) {
-    sessionN++;
-    let target = pickTargetQT(currentDims);
-    // exploration: every 4th session forces starved QT (mirror v4 policy)
-    if (useExploration && sessionN > 1 && sessionN % 4 === 0) {
-      const starved = pickStarvedQT(qtCount, target);
-      if (starved) target = starved;
+  for (let w = 0; w < weeks; w++) {
+    for (let s = 0; s < sessionsPerWeek; s++) {
+      sessionN++;
+      let target = pickTargetQT(currentDims);
+      if (useExploration && sessionN > 1 && sessionN % 4 === 0) {
+        const starved = pickStarvedQT(qtCount, target);
+        if (starved) target = starved;
+      }
+      qtCount[target]++;
+      currentDims = applyLearning(currentDims, target, exposures, learner);
+      trajectory.push({
+        session: sessionN,
+        week: w + 1,
+        targetQT: target,
+        dims: { ...currentDims },
+        exposures: { ...exposures },
+      });
     }
-    qtCount[target]++;
-    currentDims = applyLearning(currentDims, target, exposures);
-    trajectory.push({
-      session: sessionN,
-      week: w + 1,
-      targetQT: target,
-      dims: { ...currentDims },
-      exposures: { ...exposures },
-    });
   }
+  return { trajectory, qtCount, finalDims: currentDims, exposures };
 }
 
 // ─── Plateau detection ────────────────────────────────────────────────
@@ -186,43 +256,74 @@ function findPlateau(trajectory) {
   return null;
 }
 
-const plateau = findPlateau(trajectory);
-
-// ─── Summary by week ──────────────────────────────────────────────────
-
-const weeklySnapshots = [];
-for (let w = 1; w <= weeks; w++) {
-  const lastSessionOfWeek = trajectory.filter((t) => t.week === w).pop();
-  if (lastSessionOfWeek) {
-    weeklySnapshots.push({
-      week: w,
-      session: lastSessionOfWeek.session,
-      dims: lastSessionOfWeek.dims,
-      avgDim: +(DIMS.reduce((s, d) => s + lastSessionOfWeek.dims[d], 0) / DIMS.length).toFixed(1),
-      weakestDim: DIMS.reduce((min, d) =>
-        lastSessionOfWeek.dims[d] < lastSessionOfWeek.dims[min] ? d : min
-      , DIMS[0]),
-    });
+function summarize(learner, simResult) {
+  const { trajectory, qtCount, finalDims } = simResult;
+  const plateau = findPlateau(trajectory);
+  const weeklySnapshots = [];
+  for (let w = 1; w <= weeks; w++) {
+    const lastSessionOfWeek = trajectory.filter((t) => t.week === w).pop();
+    if (lastSessionOfWeek) {
+      weeklySnapshots.push({
+        week: w,
+        session: lastSessionOfWeek.session,
+        avgDim: +(DIMS.reduce((s, d) => s + lastSessionOfWeek.dims[d], 0) / DIMS.length).toFixed(1),
+        weakestDim: DIMS.reduce((min, d) =>
+          lastSessionOfWeek.dims[d] < lastSessionOfWeek.dims[min] ? d : min
+        , DIMS[0]),
+      });
+    }
   }
+  const gapClosed = {};
+  for (const d of DIMS) {
+    const gap = learner.targetDims[d] - learner.baseDims[d];
+    const closed = finalDims[d] - learner.baseDims[d];
+    gapClosed[d] = gap === 0 ? null : +((closed / gap) * 100).toFixed(0);
+  }
+  return {
+    archetype: learner.archetype,
+    baseDims: learner.baseDims,
+    finalDims,
+    gapClosedPct: gapClosed,
+    qtCoverage: `${Object.values(qtCount).filter((n) => n > 0).length}/10`,
+    plateau,
+    weeklySummary: weeklySnapshots,
+    finalWeakestDim: weeklySnapshots[weeklySnapshots.length - 1]?.weakestDim,
+  };
 }
 
 if (!existsSync(join(ROOT, "out"))) mkdirSync(join(ROOT, "out"));
-const outPath = join(ROOT, "out", `dogfood-8-learning-curve-${seed}${useExploration ? "" : "-noexp"}.json`);
+
+const totalSessions = weeks * sessionsPerWeek;
+
+const allSummaries = {};
+for (const archetype of archetypesToRun) {
+  // Reset RNG per archetype for reproducibility
+  rngState = seed >>> 0;
+  const learner = makeLearner(archetype);
+  const result = runSimulation(learner);
+  allSummaries[archetype] = summarize(learner, result);
+}
+
+const outSuffix = `${seed}${useExploration ? "" : "-noexp"}${archetypeArg === "all" ? "-all" : `-${archetypeArg}`}${d1BoostMode !== "none" ? `-d1boost-${d1BoostMode}` : ""}`;
+const outPath = join(ROOT, "out", `dogfood-8-learning-curve-${outSuffix}.json`);
 writeFileSync(outPath, JSON.stringify({
   seed,
   weeks,
   sessionsPerWeek,
   cardsPerSession,
   useExploration,
-  learner: { id: learner.id, archetype: learner.archetype, base: learner.baseDims, target: learner.targetDims, tau: learner.tauDims },
   totalSessions,
-  finalDims: trajectory[trajectory.length - 1].dims,
-  qtDistribution: qtCount,
-  plateau,
-  weeklySnapshots,
-  closedLoopCandidate: plateau
-    ? `Plateau at week ${plateau.week} on ${plateau.weakestDim} (value ${plateau.dimValue.toFixed(1)}). 7번째 closed-loop 후보: plateau breaker — 가중치 정책으로 tau 짧은 다른 QT로 강제 전환?`
-    : `${weeks}주 누적에서 plateau 미발생. tau 값 더 크게 또는 weeks 더 늘려 재실행 필요.`,
+  archetypes: archetypesToRun,
+  summaries: allSummaries,
+  d1FormPlateauSummary: archetypeArg === "all"
+    ? Object.fromEntries(
+        Object.entries(allSummaries).map(([a, s]) => [a, {
+          d1_gap_closed_pct: s.gapClosedPct.D1_Form,
+          d1_final: +s.finalDims.D1_Form.toFixed(1),
+          finalWeakestDim: s.finalWeakestDim,
+        }])
+      )
+    : "set --archetype all to compute",
 }, null, 2));
 
 console.log(JSON.stringify({
@@ -230,17 +331,16 @@ console.log(JSON.stringify({
   weeks,
   totalSessions,
   useExploration,
-  archetype: learner.archetype,
-  baseDims: learner.baseDims,
-  finalDims: trajectory[trajectory.length - 1].dims,
-  qtCoverage: `${Object.values(qtCount).filter((n) => n > 0).length}/10`,
-  qtDistribution: qtCount,
-  plateau,
-  weeklySummary: weeklySnapshots.map((s) => ({
-    week: s.week,
-    avgDim: s.avgDim,
-    weakestDim: s.weakestDim,
-    weakest: s.dims[s.weakestDim].toFixed(1),
-  })),
+  archetypes: archetypesToRun,
+  summaries: Object.fromEntries(
+    Object.entries(allSummaries).map(([a, s]) => [a, {
+      base_D1: s.baseDims.D1_Form,
+      final_D1: +s.finalDims.D1_Form.toFixed(1),
+      D1_gap_closed: `${s.gapClosedPct.D1_Form ?? "—"}%`,
+      finalWeakest: s.finalWeakestDim,
+      plateau: s.plateau ? `week ${s.plateau.week} on ${s.plateau.weakestDim}` : "none",
+      qtCoverage: s.qtCoverage,
+    }])
+  ),
   outputPath: outPath.replace(ROOT + "\\", "").replace(ROOT + "/", ""),
 }, null, 2));
