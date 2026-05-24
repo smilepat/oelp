@@ -1,7 +1,7 @@
 # OELP — Ontology English Learning Platform
 
 > Phase 1 MVP + P-1 Recommendation v2 + P-1.5 Bridge + P-2 EBS Foundation + v4 Adaptive Exploration + v5 Stage A 소진
-> Status: **327 Vitest tests · 7 routes · 20 lib modules · 18 scripts · 11 components · 4-layer safety net**
+> Status: **327 Vitest tests · 7 routes · 20 lib modules · 19 scripts · 11 components · 4-layer safety net**
 > Owner: [smilepat](https://github.com/smilepat) · 2026-05-24
 
 본 레포는 [LogicFlow EdTech 생태계](https://github.com/smilepat/myprojects)의 통합 구현체다. **신규 빌드가 아니라 기존 자산 통합 레이어**.
@@ -109,7 +109,7 @@ node scripts/calibrate.mjs --responses data/dogfood.json --min 100 --lambda 1.0 
 
 ---
 
-## 4. Scripts (18)
+## 4. Scripts (19)
 
 | 스크립트 | 역할 |
 |---|---|
@@ -131,6 +131,7 @@ node scripts/calibrate.mjs --responses data/dogfood.json --min 100 --lambda 1.0 
 | `dogfood-5-adaptive.mjs` | shouldExplore policy long-run (R5 finding source) |
 | `dogfood-6-adaptive-threshold.mjs` | adaptive `max(20, mean × 0.3)` 검증 (R5 fix, balance 0.030→0.303) |
 | `check-cross-repo-links.mjs` | myprojects 크로스 레포 링크 raw HEAD 검증 |
+| `mock-vocab-cat-test.mjs` | vocab-cat-test FastAPI mock (offline dogfooding용 — `/health` `/start` `/respond` `/results`) |
 
 ---
 
