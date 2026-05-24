@@ -85,3 +85,75 @@ describe("diagnostic.fetchDiagnostic (A7+)", () => {
     ).toBe(true);
   });
 });
+
+describe("diagnostic.fetchDiagnostic with env set (dynamic import)", () => {
+  beforeEach(() => {
+    vi.resetModules();
+    vi.stubEnv("NEXT_PUBLIC_VOCAB_CAT_TEST_URL", "http://test.local");
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  test("T5: success path — fetch returns valid DiagnosticInput", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => DEMO_DIAGNOSTIC,
+    }) as unknown as typeof fetch;
+    const mod = await import("@/lib/diagnostic");
+    const result = await mod.fetchDiagnostic("alice");
+    expect(result.studentName).toBe(DEMO_DIAGNOSTIC.studentName);
+    expect(global.fetch).toHaveBeenCalledWith(
+      "http://test.local/api/diagnose",
+      expect.objectContaining({ method: "POST" })
+    );
+  });
+
+  test("T6: non-ok HTTP response throws", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 503,
+    }) as unknown as typeof fetch;
+    const mod = await import("@/lib/diagnostic");
+    await expect(mod.fetchDiagnostic("bob")).rejects.toThrow(/503/);
+  });
+
+  test("T7: schema-failing response body throws contract error", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ totally: "wrong shape" }),
+    }) as unknown as typeof fetch;
+    const mod = await import("@/lib/diagnostic");
+    await expect(mod.fetchDiagnostic("carol")).rejects.toThrow(
+      /contract check/
+    );
+  });
+});
+
+describe("diagnostic.decodeResultParam Node Buffer branch", () => {
+  test("T8: decodes when atob unavailable (Node path)", async () => {
+    const json = JSON.stringify(DEMO_DIAGNOSTIC);
+    const b64 = Buffer.from(json, "utf-8")
+      .toString("base64")
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_");
+    const originalAtob = global.atob;
+    // Force atob = undefined to take Buffer branch
+    // @ts-expect-error — test-only undefine of atob
+    delete global.atob;
+    try {
+      const mod = await import("@/lib/diagnostic");
+      const decoded = mod.decodeResultParam(b64);
+      expect(decoded).toBeTruthy();
+      expect(decoded?.studentName).toBe(DEMO_DIAGNOSTIC.studentName);
+    } finally {
+      global.atob = originalAtob;
+    }
+  });
+
+  test("T9: malformed base64 returns null", async () => {
+    const mod = await import("@/lib/diagnostic");
+    expect(mod.decodeResultParam("not-valid-base64-!!!")).toBeNull();
+  });
+});

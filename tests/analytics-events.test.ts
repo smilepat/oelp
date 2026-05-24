@@ -142,4 +142,55 @@ describe("analytics-events", () => {
     expect(() => logEvent({ type: "map.viewed", properties: { hasDiagnostic: false } })).not.toThrow();
     JSON.stringify = orig;
   });
+
+  test("T11: downloadEventQueue triggers anchor click + revokes URL", async () => {
+    const { downloadEventQueue } = await import("@/lib/analytics-events");
+    logEvent({ type: "map.viewed", properties: { hasDiagnostic: true } });
+
+    const created: string[] = [];
+    const revoked: string[] = [];
+    // @ts-expect-error — jsdom URL stub
+    URL.createObjectURL = vi.fn(() => {
+      const url = `blob:mock-${created.length}`;
+      created.push(url);
+      return url;
+    });
+    // @ts-expect-error — jsdom URL stub
+    URL.revokeObjectURL = vi.fn((url: string) => revoked.push(url));
+    const clickSpy = vi
+      .spyOn(HTMLAnchorElement.prototype, "click")
+      .mockImplementation(() => {});
+
+    downloadEventQueue();
+
+    expect(URL.createObjectURL).toHaveBeenCalledOnce();
+    expect(clickSpy).toHaveBeenCalledOnce();
+    expect(URL.revokeObjectURL).toHaveBeenCalledOnce();
+    expect(revoked).toEqual(created);
+  });
+
+  test("T12: isKnownEventType — positive + negative", () => {
+    expect(isKnownEventType("map.viewed")).toBe(true);
+    expect(isKnownEventType("queue.completed")).toBe(true);
+    expect(isKnownEventType("calibration.attempted")).toBe(true);
+    expect(isKnownEventType("nonexistent.event")).toBe(false);
+    expect(isKnownEventType("")).toBe(false);
+  });
+});
+
+describe("analytics-events SSR safety", () => {
+  test("downloadEventQueue no-op when document absent (node import)", async () => {
+    // Dynamic-import variant that runs without DOM globals would require a
+    // separate test file. Here we just verify the guard is reachable in code
+    // by stubbing typeof document via vi.stubGlobal.
+    const origDoc = globalThis.document;
+    // @ts-expect-error — test-only undefine
+    delete globalThis.document;
+    try {
+      const { downloadEventQueue } = await import("@/lib/analytics-events");
+      expect(() => downloadEventQueue()).not.toThrow();
+    } finally {
+      globalThis.document = origDoc;
+    }
+  });
 });
