@@ -134,6 +134,7 @@ node scripts/calibrate.mjs --responses data/dogfood.json --min 100 --lambda 1.0 
 | `mock-vocab-cat-test.mjs` | vocab-cat-test FastAPI mock (offline dogfooding용 — `/health` `/start` `/respond` `/results`) |
 | `dogfood-7-cohort.mjs` | multi-learner cohort forecast (N=1/5/10/30/50 + `--exploration on`로 풀 QT 커버) |
 | `dogfood-8-learning-curve.mjs` | 단일 학습자 종방향 학습 곡선 (multi-archetype + `--d1-boost`로 옵션 A 시뮬) |
+| `check-dim-coverage.mjs` | keyVariable 매핑 자동 진단 (v10 D1_Form hidden defect 같은 갭 자동 검출) |
 
 ---
 
