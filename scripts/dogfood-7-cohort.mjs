@@ -47,6 +47,10 @@ const seed = args.seed ? parseInt(args.seed, 10) : 11;
 const sessionsPerLearner = args["sessions-per"] ? parseInt(args["sessions-per"], 10) : 8;
 const cardsPerSession = 10;
 const COHORT_SIZES = [1, 5, 10, 30, 50];
+// Mirrors lib/recommendation.ts shouldExplore + cohort-level balance proxy.
+// When enabled, every 4th session in a learner's lifetime forces a starved-QT
+// target instead of the personal weakest. Default off (matches baseline forecast).
+const useExploration = args.exploration === "on" || args.exploration === "true";
 
 let rngState = seed >>> 0;
 function rng() {
@@ -141,7 +145,29 @@ function sampleCorrectness(dims, qtId) {
   return rng() < Math.max(0, Math.min(1, p + noise));
 }
 
-function generateLearnerResponses(profile) {
+/**
+ * Pick a starved QT — one that has the lowest cohort-wide response count.
+ * Models `findExplorationTarget` cohort variant: cap = mean responses × 0.3.
+ */
+function pickStarvedQT(cohortQtCount, excludeQt) {
+  const meanSamples =
+    Object.values(cohortQtCount).reduce((a, b) => a + b, 0) / QT_IDS.length;
+  const cap = Math.max(20, meanSamples * 0.3);
+  let best = null;
+  let minN = Infinity;
+  for (const qt of QT_IDS) {
+    if (qt === excludeQt) continue;
+    const n = cohortQtCount[qt] ?? 0;
+    if (n >= cap) continue;
+    if (n < minN) {
+      minN = n;
+      best = qt;
+    }
+  }
+  return best;
+}
+
+function generateLearnerResponses(profile, cohortQtCount) {
   const responses = [];
   for (let s = 0; s < sessionsPerLearner; s++) {
     // Per-session ±10 dim jitter (mood/fatigue)
@@ -149,7 +175,13 @@ function generateLearnerResponses(profile) {
     for (const d of DIMS) {
       dims[d] = Math.max(0, Math.min(100, Math.round(profile.baseDims[d] + (rng() - 0.5) * 10)));
     }
-    const target = pickTargetQT(dims);
+    let target = pickTargetQT(dims);
+    // shouldExplore proxy: every 4th session forces starved QT (cohort-level
+    // balance, not per-learner). Mirrors v4 balance-aware policy at scale.
+    if (useExploration && s >= 1 && s % 4 === 0) {
+      const starved = pickStarvedQT(cohortQtCount, target);
+      if (starved) target = starved;
+    }
     for (let c = 0; c < cardsPerSession; c++) {
       responses.push({
         learnerId: profile.id,
@@ -157,6 +189,7 @@ function generateLearnerResponses(profile) {
         dimensionScores: dims,
         isCorrect: sampleCorrectness(dims, target),
       });
+      cohortQtCount[target] = (cohortQtCount[target] ?? 0) + 1;
     }
   }
   return responses;
@@ -167,10 +200,13 @@ function generateLearnerResponses(profile) {
 const maxCohort = COHORT_SIZES[COHORT_SIZES.length - 1];
 const allLearners = [];
 const allResponses = [];
+// Cohort-wide QT counter shared across learners (mirrors a centralized
+// recommender state). Resets per script run.
+const cohortQtCount = Object.fromEntries(QT_IDS.map((qt) => [qt, 0]));
 for (let i = 0; i < maxCohort; i++) {
   const profile = generateLearnerProfile(i);
   allLearners.push(profile);
-  allResponses.push(...generateLearnerResponses(profile));
+  allResponses.push(...generateLearnerResponses(profile, cohortQtCount));
 }
 
 const archetypeCount = allLearners.reduce((acc, l) => {
@@ -226,7 +262,11 @@ for (const n of COHORT_SIZES) {
 }
 
 if (!existsSync(join(ROOT, "out"))) mkdirSync(join(ROOT, "out"));
-const outPath = join(ROOT, "out", `dogfood-7-cohort-${seed}.json`);
+const outPath = join(
+  ROOT,
+  "out",
+  `dogfood-7-cohort-${seed}${useExploration ? "-explore" : ""}.json`
+);
 writeFileSync(
   outPath,
   JSON.stringify(
@@ -234,6 +274,7 @@ writeFileSync(
       seed,
       sessionsPerLearner,
       cardsPerSession,
+      useExploration,
       cohortSizes: COHORT_SIZES,
       overallArchetypeDistribution: archetypeCount,
       cohortReports,
@@ -255,6 +296,7 @@ console.log(
   JSON.stringify(
     {
       seed,
+      useExploration,
       maxCohort,
       overallArchetypeDistribution: archetypeCount,
       summary: Object.fromEntries(
