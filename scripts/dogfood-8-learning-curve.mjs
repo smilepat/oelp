@@ -91,6 +91,12 @@ const ARCHETYPES = {
     targetDims: { D1_Form: 90, D2_Meaning: 90, D3_Context: 90, D4_Network: 90, D5_Usage: 90 },
     tauDims: { D1_Form: 25, D2_Meaning: 25, D3_Context: 25, D4_Network: 25, D5_Usage: 25 },
   },
+  "weak-D1": {
+    // EFL 초/중급 학습자 — form (spelling/POS) 약점. v10 추가.
+    baseDims: { D1_Form: 30, D2_Meaning: 55, D3_Context: 55, D4_Network: 55, D5_Usage: 55 },
+    targetDims: { D1_Form: 80, D2_Meaning: 80, D3_Context: 80, D4_Network: 80, D5_Usage: 80 },
+    tauDims: { D1_Form: 18, D2_Meaning: 22, D3_Context: 22, D4_Network: 22, D5_Usage: 22 },
+  },
 };
 
 const archetypeArg = args.archetype ?? "weak-D2";
