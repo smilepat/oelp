@@ -77,6 +77,14 @@ describe("error-log (A3)", () => {
     expect(readErrorLog()).toEqual([]);
   });
 
+  test("T6b: non-array JSON in storage falls back to []", () => {
+    // Branch coverage: Array.isArray(parsed) === false path (lib line 42)
+    if (typeof localStorage !== "undefined") {
+      localStorage.setItem("oelp.error-log", '{"id":"x","message":"not an array"}');
+    }
+    expect(readErrorLog()).toEqual([]);
+  });
+
   test("T7: source enum carries through", () => {
     logError({ source: "boundary", message: "a" });
     logError({ source: "window", message: "b" });
