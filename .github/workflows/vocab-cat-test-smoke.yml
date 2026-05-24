@@ -121,8 +121,11 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Install deps
-        run: npm ci
+      - name: Install deps (ajv + ajv-formats for verify script)
+        # Avoid `npm ci` — package-lock.json was generated on Windows and
+        # has missing Linux platform deps (@emnapi/runtime, etc). The verify
+        # script only needs ajv + ajv-formats, so install just those.
+        run: npm install --no-save --no-audit --no-fund ajv ajv-formats
 
       - name: Probe Cloud Run /health
         run: |
