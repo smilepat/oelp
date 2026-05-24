@@ -28,6 +28,7 @@ import {
   type BetaPosterior,
 } from "@/lib/recommendation";
 import { loadSessions } from "@/lib/session-store";
+import { detectPlateaus } from "@/lib/plateau-detection";
 import { logEvent } from "@/lib/analytics-events";
 import {
   saveSession,
@@ -329,6 +330,7 @@ export default function QueuePage() {
           generator={planNonNull.generator}
           issues={planNonNull.generatorIssues}
         />
+        <QueuePlateauNotice targetDimensions={planNonNull.targetDimensions} />
       </header>
 
       {!done && card && (
@@ -708,5 +710,40 @@ function RatingRow({ label, value, onChange }: RatingRowProps) {
         ))}
       </div>
     </div>
+  );
+}
+
+/**
+ * QueuePlateauNotice (v15): if the current queue targets D1_Form and
+ * accumulated sessions show D1 plateau, surface a notice. Mirrors the
+ * /sessions PlateauWarningPanel logic but inline at the queue's header.
+ */
+function QueuePlateauNotice({ targetDimensions }: { targetDimensions: string[] }) {
+  const [hasD1Plateau, setHasD1Plateau] = useState(false);
+  useEffect(() => {
+    const sessions = loadSessions();
+    const r = detectPlateaus(sessions, 4, 3);
+    setHasD1Plateau(r.hasD1Plateau);
+  }, []);
+
+  // Only show if this queue targets D1_Form AND learner has D1 plateau confirmed
+  const queueTargetsD1 = targetDimensions.includes("D1_Form");
+  if (!queueTargetsD1 || !hasD1Plateau) return null;
+
+  return (
+    <p className="rounded-md bg-amber-50 px-3 py-2 text-[11px] text-amber-900 dark:bg-amber-950 dark:text-amber-100">
+      ⚠️ 이 큐는 <strong>D1_Form 강화</strong>를 목표로 합니다. 그러나 v10 finding 기준
+      현 weight 매트릭스는 D1 학습 임계 미달 — 4주 이상 누적된 본인 plateau confirmed.
+      예상 효과 낮음. 옵션 A&apos; PR (
+      <a
+        href="https://github.com/smilepat/myprojects/blob/main/docs/02-design/d1-plateau-option-a-prime.md"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="underline"
+      >
+        설계
+      </a>
+      ) 적용 후 재시도 권장.
+    </p>
   );
 }
