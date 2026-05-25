@@ -1,7 +1,7 @@
 # OELP — Ontology English Learning Platform
 
-> Phase 1 MVP + P-1 Recommendation v2 + P-1.5 Bridge + P-2 EBS Foundation + v4 Adaptive Exploration + v5 Stage A 소진 + v8 Cloud Run 배포 + v9-v17 D1 plateau + 8 surfaces + 8 모니터링 도구 + 옵션 A' 3단계 정당화
-> Status: **379 Vitest tests · 7 routes · 21 lib modules · 30 scripts · 13 components · 4-layer safety net**
+> Phase 1 MVP + P-1 Recommendation v2 + P-1.5 Bridge + P-2 EBS Foundation + v4 Adaptive Exploration + v5 Stage A 소진 + v8 Cloud Run 배포 + v9-v18 D1 plateau + 8 surfaces + 9 모니터링 도구 + 옵션 A' 3단계 + retention finding
+> Status: **379 Vitest tests · 7 routes · 21 lib modules · 32 scripts · 13 components · 4-layer safety net**
 > Owner: [smilepat](https://github.com/smilepat) · 2026-05-24
 
 본 레포는 [LogicFlow EdTech 생태계](https://github.com/smilepat/myprojects)의 통합 구현체다. **신규 빌드가 아니라 기존 자산 통합 레이어**.
@@ -109,7 +109,7 @@ node scripts/calibrate.mjs --responses data/dogfood.json --min 100 --lambda 1.0 
 
 ---
 
-## 4. Scripts (30)
+## 4. Scripts (32)
 
 | 스크립트 | 역할 |
 |---|---|
@@ -143,6 +143,8 @@ node scripts/calibrate.mjs --responses data/dogfood.json --min 100 --lambda 1.0 
 | `dogfood-12-forgetting-curve.mjs` | Ebbinghaus forgetting 추가 24주 sim — D1 negative gap -72% finding (시간 차원 정당화) |
 | `c4-3-trend-cli.mjs` | lib/trend-analysis CLI 래퍼 — CI/cron에서 누적 데이터 직접 trend 분석 |
 | `dogfood-13-forgetting-plus-option-a-prime.mjs` | forgetting + 옵션 A' 결합 sim — D1 +113~160%p 회복, side effect 0, SAFE |
+| `dogfood-14-spike-pattern.mjs` | 휴학 후 복귀 시나리오 sim (24w 중 8w active) — 모든 dim negative gap |
+| `web-vitals-audit.mjs` | Production HTTP TTFB / size / compression baseline (6 routes) |
 
 ---
 
@@ -204,7 +206,7 @@ node scripts/calibrate.mjs --responses data/dogfood.json --min 100 --lambda 1.0 
 
 ---
 
-## 9. 진행 상황 종합 (2026-05-25 v17 sprint 종료 — 옵션 A' 시간 차원 정당화 3단계 완성)
+## 9. 진행 상황 종합 (2026-05-25 v18 sprint 종료 — AGENTS.md + retention finding + production HTTP baseline)
 
 | Phase | 진행 |
 |---|---|
@@ -264,9 +266,10 @@ node scripts/calibrate.mjs --responses data/dogfood.json --min 100 --lambda 1.0 
 | **v16: c4-3-trend-cli.mjs** | lib/trend-analysis CLI 래퍼. CI/cron에서 누적 데이터 직접 분석 가능. 운영 모니터링 도구 6→8 |
 | **v17: dogfood-13 forgetting + 옵션 A' 결합** | weak-D1/D2/D3에서 D1 **+113~160%p 회복**, side effect 0 → 시간 차원 정당화 **3 단계 완성** (plateau → negative gap → 회복) |
 | **v17: c4-3-trend-cli 8 contract tests** | sentinel (D1 slope=0) → 옵션 A' PR 후 자동 flip, CLI ↔ lib drift 보호 |
+| **v18: AGENTS.md + dogfood-14 + web-vitals-audit** | 다음 세션 onboarding 컨텍스트 9 절 + 휴학 후 복귀 sim (학습 패턴이 weight보다 중요) + production HTTP baseline → 운영 도구 8→9 |
 
 상세:
-- 통합 회고: [`docs/04-report/oelp-integrated-summary.md`](https://github.com/smilepat/myprojects/blob/main/docs/04-report/oelp-integrated-summary.md) v17 (옵션 A' 3단계 정당화 완성)
+- 통합 회고: [`docs/04-report/oelp-integrated-summary.md`](https://github.com/smilepat/myprojects/blob/main/docs/04-report/oelp-integrated-summary.md) v18 (AGENTS + retention + production baseline)
 - Stability sprint: [`docs/04-report/stability-roadmap-tier-1-3-complete.md`](https://github.com/smilepat/myprojects/blob/main/docs/04-report/stability-roadmap-tier-1-3-complete.md)
 - Phase 2 PRD: [`docs/01-plan/prd-oelp-mvp-phase2.md`](https://github.com/smilepat/myprojects/blob/main/docs/01-plan/prd-oelp-mvp-phase2.md)
 - C4.1 게이트 3 cycle: [`docs/03-analysis/dogfooding-pass-{1,2,3}.md`](https://github.com/smilepat/myprojects/tree/main/docs/03-analysis)
