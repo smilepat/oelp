@@ -42,6 +42,11 @@ const PAIRS = [
     schema: "schemas/vocab-pool-source.schema.json",
     data: "lib/vocab-pool-source.json",
   },
+  {
+    name: "skill-ontology",
+    schema: "schemas/skill-ontology.schema.json",
+    data: "lib/skill-ontology-seed.json",
+  },
 ];
 
 const ajv = new Ajv({ allErrors: true, strict: false });
