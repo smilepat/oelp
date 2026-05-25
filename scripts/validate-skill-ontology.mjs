@@ -9,6 +9,8 @@
  *   4. core_dependency subgraph is acyclic (DFS 3-color)
  *   5. mvpActive=true skills each have ≥1 mapping (dims | qts | keyVars)
  *   6. layer "P" excluded in PR-1 (persona P0 alignment)
+ *   7. all keyVariables in lib/ontology.ts QUESTION_TYPES map to ≥1 skill (PR-2)
+ *   8. seed declares no keyVar that doesn't exist in QUESTION_TYPES (PR-2)
  *
  * Exit codes:
  *   0  All checks pass
@@ -115,6 +117,32 @@ for (const n of seed.nodes) {
   }
 }
 
+// (7,8) keyVariable cross-check with lib/ontology.ts QUESTION_TYPES (PR-2)
+{
+  const ontologyTs = readFileSync(join(ROOT, "lib/ontology.ts"), "utf-8");
+  const kvRe = /keyVariables:\s*\[([^\]]+)\]/g;
+  const allKvs = new Set();
+  let m;
+  while ((m = kvRe.exec(ontologyTs)) !== null) {
+    for (const lit of m[1].matchAll(/"([^"]+)"/g)) allKvs.add(lit[1]);
+  }
+  const seedKvs = new Set();
+  for (const n of seed.nodes) for (const kv of n.measuredByKeyVars) seedKvs.add(kv);
+
+  // (7) orphans — keyVars in ontology.ts with no skill mapping
+  for (const kv of allKvs) {
+    if (!seedKvs.has(kv)) {
+      errors.push(`[keyVar] orphan keyVariable "${kv}" — declared in ontology.ts but no skill maps it`);
+    }
+  }
+  // (8) phantoms — keyVars in seed not declared in ontology.ts
+  for (const kv of seedKvs) {
+    if (!allKvs.has(kv)) {
+      errors.push(`[keyVar] phantom keyVariable "${kv}" — referenced by skill seed but not in ontology.ts QUESTION_TYPES`);
+    }
+  }
+}
+
 if (errors.length > 0) {
   console.error(`[FAIL] skill-ontology validation: ${errors.length} error(s)`);
   for (const e of errors) console.error(`  - ${e}`);
@@ -126,7 +154,11 @@ for (const n of seed.nodes) layerCounts[n.layer] = (layerCounts[n.layer] ?? 0) +
 const edgeCounts = {};
 for (const e of seed.edges) edgeCounts[e.type] = (edgeCounts[e.type] ?? 0) + 1;
 
+const kvCovered = new Set();
+for (const n of seed.nodes) for (const kv of n.measuredByKeyVars) kvCovered.add(kv);
+
 console.log(`[ OK ] skill-ontology: ${seed.nodes.length} nodes, ${seed.edges.length} edges`);
-console.log(`       layers: ${JSON.stringify(layerCounts)}`);
-console.log(`       edges:  ${JSON.stringify(edgeCounts)}`);
-console.log(`       version: ${seed.version}`);
+console.log(`       layers:    ${JSON.stringify(layerCounts)}`);
+console.log(`       edges:     ${JSON.stringify(edgeCounts)}`);
+console.log(`       keyVars:   ${kvCovered.size} mapped`);
+console.log(`       version:   ${seed.version}`);

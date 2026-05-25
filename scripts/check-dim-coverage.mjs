@@ -100,12 +100,33 @@ const dimSummary = DIMS.map((d) => ({
 const missingDims = dimSummary.filter((s) => s.status === "MISSING");
 const weakDims = dimSummary.filter((s) => s.status === "WEAK");
 
+// ─── Skill coverage (p2a-ontology PR-2, informational) ────────────────
+
+let skillCoverage = null;
+try {
+  const seed = JSON.parse(
+    readFileSync(join(ROOT, "lib", "skill-ontology-seed.json"), "utf-8")
+  );
+  const mapped = new Set();
+  for (const n of seed.nodes) for (const kv of n.measuredByKeyVars) mapped.add(kv);
+  const orphanKeyVars = Object.keys(mapping).filter((kv) => !mapped.has(kv));
+  skillCoverage = {
+    seedVersion: seed.version,
+    keyVarsMapped: mapped.size,
+    keyVarsTotal: Object.keys(mapping).length,
+    orphanKeyVars,
+  };
+} catch {
+  // seed not yet present — skip silently (pre-PR-1 environments)
+}
+
 const report = {
   totalKeyVariables: totalKv,
   dimSummary,
   missingDims: missingDims.map((s) => s.dim),
   weakDims: weakDims.map((s) => s.dim),
   contradictions,
+  ...(skillCoverage ? { skillCoverage } : {}),
 };
 
 if (verbose) {

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "version": "v1-2026-05-25",
+  "version": "v2-2026-05-25",
   "nodes": [
     {
       "id": "V1",
@@ -11,7 +11,7 @@
       "gradeLevel": "elem_4_6",
       "measuredByDims": ["D2_Meaning"],
       "measuredByQts": [],
-      "measuredByKeyVars": [],
+      "measuredByKeyVars": ["advanced_vocab"],
       "mvpActive": true
     },
     {
@@ -43,11 +43,11 @@
       "layer": "V",
       "name": "다의어 이해",
       "nameEn": "Polysemy",
-      "description": "맥락에 따른 단어 의미 분기",
+      "description": "맥락에 따른 단어 의미 분기 (은유 포함)",
       "gradeLevel": "middle",
       "measuredByDims": ["D2_Meaning", "D3_Context"],
       "measuredByQts": [],
-      "measuredByKeyVars": [],
+      "measuredByKeyVars": ["metaphor_density"],
       "mvpActive": true
     },
     {
@@ -179,7 +179,7 @@
       "gradeLevel": "high",
       "measuredByDims": ["D3_Context", "D4_Network"],
       "measuredByQts": ["TYPE-요지", "TYPE-주제"],
-      "measuredByKeyVars": ["topic_sentence_position", "topic_abstractness"],
+      "measuredByKeyVars": ["topic_sentence_position", "topic_abstractness", "title_abstractness"],
       "mvpActive": true
     },
     {
@@ -203,7 +203,7 @@
       "gradeLevel": "high",
       "measuredByDims": ["D3_Context"],
       "measuredByQts": [],
-      "measuredByKeyVars": ["paragraph_dependency", "discourse_structure"],
+      "measuredByKeyVars": ["paragraph_dependency", "discourse_structure", "text_type_variation"],
       "mvpActive": true
     },
     {
@@ -263,7 +263,7 @@
       "gradeLevel": "high",
       "measuredByDims": [],
       "measuredByQts": ["TYPE-목적", "TYPE-주장"],
-      "measuredByKeyVars": [],
+      "measuredByKeyVars": ["purpose_indirectness"],
       "mvpActive": true
     },
     {
@@ -275,7 +275,7 @@
       "gradeLevel": "high",
       "measuredByDims": [],
       "measuredByQts": ["TYPE-심경"],
-      "measuredByKeyVars": [],
+      "measuredByKeyVars": ["emotional_indirectness", "emotion_vocab_density"],
       "mvpActive": true
     },
     {
@@ -343,11 +343,11 @@
       "layer": "A",
       "name": "추상 개념 이해",
       "nameEn": "Abstract concept",
-      "description": "추상적 개념의 정의·범위 이해",
+      "description": "추상적 개념의 정의·범위 이해 (고급 어휘 포함)",
       "gradeLevel": "high",
       "measuredByDims": ["D2_Meaning", "D4_Network"],
       "measuredByQts": [],
-      "measuredByKeyVars": ["abstractness", "topic_abstractness"],
+      "measuredByKeyVars": ["abstractness", "topic_abstractness", "advanced_vocab"],
       "mvpActive": true
     },
     {
