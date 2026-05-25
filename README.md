@@ -1,7 +1,7 @@
 # OELP — Ontology English Learning Platform
 
 > Phase 1 MVP + P-1 Recommendation v2 + P-1.5 Bridge + P-2 EBS Foundation + v4 Adaptive Exploration + v5 Stage A 소진 + v8 Cloud Run 배포 + v9-v18 D1 plateau + 8 surfaces + 9 모니터링 도구 + 옵션 A' 3단계 + retention finding
-> Status: **379 Vitest tests · 7 routes · 21 lib modules · 32 scripts · 13 components · 4-layer safety net**
+> Status: **387 Vitest tests · 7 routes · 22 lib modules · 33 scripts · 14 components · 4-layer safety net**
 > Owner: [smilepat](https://github.com/smilepat) · 2026-05-24
 
 본 레포는 [LogicFlow EdTech 생태계](https://github.com/smilepat/myprojects)의 통합 구현체다. **신규 빌드가 아니라 기존 자산 통합 레이어**.
@@ -50,7 +50,7 @@ npm install
 npm run dev
 # → http://localhost:3000 (port 점유 시 3001 fallback)
 
-# 전체 CI 시뮬레이션 (lint + 379 tests + C4.1 + build)
+# 전체 CI 시뮬레이션 (lint + 387 tests + C4.1 + build)
 npm run ci
 ```
 
@@ -82,7 +82,7 @@ node scripts/calibrate.mjs --responses data/dogfood.json --min 100 --lambda 1.0 
 
 ---
 
-## 3. 라이브러리 모듈 (21)
+## 3. 라이브러리 모듈 (22)
 
 | 파일 | 역할 |
 |---|---|
@@ -109,7 +109,7 @@ node scripts/calibrate.mjs --responses data/dogfood.json --min 100 --lambda 1.0 
 
 ---
 
-## 4. Scripts (32)
+## 4. Scripts (33)
 
 | 스크립트 | 역할 |
 |---|---|
@@ -151,7 +151,7 @@ node scripts/calibrate.mjs --responses data/dogfood.json --min 100 --lambda 1.0 
 ## 5. 검증 안전망 (4중)
 
 ```
-1. Vitest 379 단위 테스트 (1.95s)
+1. Vitest 387 단위 테스트 (1.95s)
    ↓
 2. C4.1 dimension-mapping 회귀 (PR 마다 + weekly cron 둘 다)
    ↓
@@ -162,7 +162,7 @@ node scripts/calibrate.mjs --responses data/dogfood.json --min 100 --lambda 1.0 
 
 ### GitHub Actions
 
-- **`pr-check.yml`**: PR 마다 lint + 379 tests + C4.1 + build 자동 게이트
+- **`pr-check.yml`**: PR 마다 lint + 387 tests + C4.1 + build 자동 게이트
 - **`weekly-calibration.yml`**: 일요일 02:00 UTC + Supabase events → calibrate → PR 자동 생성
 
 ---
@@ -194,7 +194,7 @@ node scripts/calibrate.mjs --responses data/dogfood.json --min 100 --lambda 1.0 
 - **Frontend**: Next.js 16.2.6 (App Router, Turbopack), React 19.2.4, TypeScript, Tailwind CSS 4
 - **Visualizations**: Cytoscape.js 3.33.4, Chart.js 4.5.1, react-chartjs-2 5.3.1
 - **Data**: vocabulary-pool (auto-gen from vocabulary-db), localStorage stores
-- **Testing**: Vitest 4.1.7 (40 test files, 379 tests)
+- **Testing**: Vitest 4.1.7 (41 test files, 387 tests)
 - **Backend (planned)**: vocab-cat-test FastAPI (Docker, separate container)
 - **Deployment (planned)**: Vercel (Next.js) + Cloud Run (FastAPI)
 

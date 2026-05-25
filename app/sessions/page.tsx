@@ -15,6 +15,7 @@ import { TrendPanel } from "@/components/TrendPanel";
 import { PosteriorBalancePanel } from "@/components/PosteriorBalancePanel";
 import { AnalyticsQueuePanel } from "@/components/AnalyticsQueuePanel";
 import { PlateauWarningPanel } from "@/components/PlateauWarningPanel";
+import { RetentionDashboard } from "@/components/RetentionDashboard";
 import {
   getRegressionEvents,
   countByResult,
@@ -139,6 +140,8 @@ export default function SessionsPage() {
       <TrendPanel sessions={sessions} />
 
       <PlateauWarningPanel sessions={sessions} />
+
+      <RetentionDashboard sessions={sessions} />
 
       <CalibrationHistoryPanel />
 
