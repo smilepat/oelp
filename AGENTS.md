@@ -65,11 +65,13 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 ## 6. 첫 진입 시 권장 순서
 
-1. **CLAUDE.md §2 status table** → 현 누적 수치 (tests, scripts, components, CI gates)
-2. **CLAUDE.md §11 변경 이력** → v1~v17 한 줄 요약 (가장 최근 sprint에서 시작 가능)
-3. **본 AGENTS.md** → 안전 정책 + 본인 결단 영역
-4. **README.md §10 Stage A/B/C/D** → 다음 자율 가능 후보
-5. **myprojects/docs/04-report/oelp-integrated-summary.md** → 7번째 closed-loop PR-ready 상태
+1. **`HANDOFF.md` §13** → 다음 작업 시작 지침 (clone 후 즉시 적용 가능, 가장 우선) ⭐
+2. **HANDOFF.md §1-§12** → 19 sprints 누적 인계 + 핵심 함정 메모
+3. **CLAUDE.md §2 status table** → 현 누적 수치
+4. **CLAUDE.md §11 변경 이력** → v1~v19 한 줄 요약
+5. **본 AGENTS.md** → 안전 정책 + 본인 결단 영역
+6. **README.md §10 Stage A/B/C/D** → 다음 자율 가능 후보
+7. **myprojects/docs/04-report/oelp-integrated-summary.md** → 7번째 closed-loop PR-ready 상태
 
 ## 7. 본인 결단 미해결 항목 (v17 시점)
 

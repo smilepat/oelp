@@ -267,3 +267,165 @@ node scripts/simulate-option-a-prime.mjs   # 옵션 A' PR safe?
 ## 12. 변경 이력
 
 - 2026-05-25 v19: 본 HANDOFF.md 작성 (19 sprints 누적 인계)
+- 2026-05-25 v19+: §13 다음 작업 시작 지침 추가 (clone 후 즉시 적용 가능)
+
+---
+
+## 13. 다음 작업 시작 지침 (clone 후 즉시 적용 가능)
+
+> **새 환경에서 OELP를 처음 clone한 직후 또는 새 Claude session 시작 시 본 절을 읽으면 작업 즉시 시작 가능.**
+
+### 13.1 새 Claude session 시작 시 (3가지 시나리오)
+
+#### A. 자율 작업 계속 (가장 흔함)
+새 세션에서 단순히:
+```
+진행
+```
+또는
+```
+다음 작업을 진행해
+```
+
+→ Claude가 자동으로 `HANDOFF.md`, `CLAUDE.md`, `AGENTS.md` 로드해서 v19 상태에서 v20 sprint 시작. 4-task 시퀀스 자동 제안.
+
+#### B. 특정 영역 작업 지시
+```
+D1 옵션 A' PR을 작성해줘. 시뮬 결과 SAFE이고 4 파일 동시 변경 설계 완료 상태.
+```
+```
+EBS adapter PR 진행. Stage C 진입 전이지만 미리 작성하고 싶음.
+```
+```
+학습자 모집 채널 후보 5개 brainstorm해줘.
+```
+→ 본인 결단 영역 명시적으로 위임. Claude가 그 영역에서만 작업.
+
+#### C. 상태 점검만
+```
+v19까지 어디까지 왔는지 요약해줘
+```
+```
+다음 후보 4가지 보여줘
+```
+→ Claude가 HANDOFF.md 기반으로 상태 보고만 하고 멈춤.
+
+### 13.2 작업 시작 전 체크리스트
+
+```bash
+# 1. 두 레포 모두 main 최신
+cd /c/tmp/oelp && git pull && git log --oneline -3
+cd /c/tmp/myprojects && git pull && git log --oneline -3
+
+# 2. CI 상태 (최근 PR 통과 + 일요일 cron 정상)
+cd /c/tmp/oelp && gh run list --limit 3
+
+# 3. 운영 상태 (선택)
+curl -sI https://oelp-phi.vercel.app/
+curl -s https://vocab-cat-api-452237528328.asia-northeast3.run.app/health
+```
+
+### 13.3 자율 vs 본인 결단 구분 (트리거)
+
+#### 자율 진행 가능 (Claude 단독)
+- 시뮬레이션 (dogfood-16~)
+- 코드 품질 (coverage push, refactor)
+- 운영 위젯 (15번째 component+)
+- 문서 메인테넌스 (회고, INDEX)
+- 운영 모니터링 도구 확장
+- → 트리거: `진행` / `다음 작업` / `자율로`
+
+#### 본인 결단 필요 (smilepat 직접)
+- `lib/ontology-weights.json` 변경 (옵션 A' PR)
+- `lib/kv-dim-mapping.ts` + `lib/ontology.ts` 동시 변경
+- EBS adapter (인증 token 발급 + Gemini quota)
+- 외부 학습자 모집 (본인 채널)
+- → 트리거: 명시적 위임 ("내가 결단할게" / "이 PR 진행해줘")
+
+### 13.4 v20+ 예상 시나리오 (3가지)
+
+#### A. 학습자 모집 후 데이터 도착
+- RetentionDashboard, PlateauWarningPanel 등 9 surfaces 자동 활성
+- C4.1 게이트 첫 실 calibration cycle 시작
+- v18 시뮬 모델 vs 실측 일치성 검증
+
+#### B. 본인이 옵션 A' PR 진행
+- 4 파일 동시 변경 → C4.1 게이트 통과 (시뮬 예측대로)
+- D1 plateau finding의 7번째 closed-loop 영구화
+- `check-dim-coverage` CI gate `D1 MISSING → OK` 자동 flip
+- 관련 tests (T4 in `dim-coverage-script.test.ts`) 자동 fail → 문서 갱신
+
+#### C. 자율 진행 계속 (학습자 모집 지연)
+- `dogfood-16`: Leitner SR + dim-level forgetting 통합 sim
+- 다른 dim sensitivity 정밀화
+- Phase 3 preview 설계
+
+### 13.5 작업 종료 시 (handoff 갱신)
+
+새 sprint 마무리 후:
+
+1. **HANDOFF.md §1 수치 갱신** (387 → 새 값)
+2. **HANDOFF.md §12 변경 이력 한 줄 추가**
+3. **CLAUDE.md §11 v20 변경 이력 추가**
+4. **myprojects/docs/04-report/oelp-integrated-summary.md §27 v20 신설**
+5. **README §9 표 + §1 status badge 갱신**
+6. **모두 commit + push**
+
+Claude에게 한 줄로:
+```
+HANDOFF + CLAUDE + README + myprojects v20 통합 회고 갱신해
+```
+
+### 13.6 안전 가이드 (절대 위반 금지 — Claude도 본인도)
+
+다음은 자율 작업 시 Claude가 절대 하지 않도록 본인이 알아두기:
+
+- **`lib/ontology-weights.json` production 값 변경 후 push** — synthetic 검증만 가능, 항상 `git revert`
+- **`scripts/promote-weights.mjs --apply`** — 본인이 실 학습자 데이터로만 실행 (Claude 자율 금지)
+- **EBS adapter PR을 자율로 작성하고 merge** — 인증 token + Firebase config 본인 영역
+- **vocab-cat-test 백엔드 직접 수정 후 Cloud Run 재배포** — 본인이 빌드 검증 후
+
+→ Claude가 위 영역 시도하면 즉시 중단 + `git revert` 요청.
+
+### 13.7 한 줄 요약
+
+> 새 세션에서 `진행` 한 단어만 보내면 Claude가 HANDOFF.md 로드해서 v20 sprint 자율 시작. 본인 결단 영역은 명시적 위임 필요. 작업 종료 시 §13.5 따라 HANDOFF 갱신.
+
+### 13.8 추천 첫 프롬프트 템플릿
+
+```
+v19 끝났음. 다음 후보 4가지 dev-flow 순으로 보여주고, 자율 진행 가능한 거 1순위부터 4개 진행해.
+```
+
+또는 가장 짧게:
+
+```
+진행해
+```
+
+→ 둘 다 동일하게 작동. v19 상태 인지 + 다음 자율 후보 자동 선택 + 4-task 시퀀스 시작.
+
+### 13.9 Clone 후 첫 환경 셋업 (한 번만)
+
+```bash
+# 1. 두 레포 clone
+gh repo clone smilepat/oelp
+gh repo clone smilepat/myprojects  # 옵션, 보고서 작업 시 필요
+
+# 2. OELP 의존성
+cd oelp
+npm install
+
+# 3. 운영 모니터링 도구 점검 (한 번에 확인)
+node scripts/check-dim-coverage.mjs      # D1 MISSING 정상 (옵션 A' PR 전)
+node scripts/bundle-size-audit.mjs       # 1.58MB / 3MB 정상
+node scripts/web-vitals-audit.mjs        # production HTTP baseline
+
+# 4. CI 시뮬 (12 gates)
+npm run ci
+
+# 5. Production 확인
+curl -sI https://oelp-phi.vercel.app/    # 200 OK
+```
+
+위 6 명령 통과하면 환경 정상. 새 Claude session 시작 + `진행` 가능.
