@@ -16,6 +16,8 @@ interface Props {
   includeSkills?: boolean;
   /** When includeSkills, restrict to these layers. Default = all 5. */
   skillLayers?: SkillLayerId[];
+  /** PR-3.6: highlight these node ids with the `causal-path` class. */
+  causalPathIds?: string[];
 }
 
 // PR-3.5 skill layer accent colors (chosen for color-blind friendliness)
@@ -46,6 +48,7 @@ export function OntologyMap({
   onNodeClick,
   includeSkills = false,
   skillLayers,
+  causalPathIds,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const cyRef = useRef<Core | null>(null);
@@ -206,6 +209,24 @@ export function OntologyMap({
             "target-arrow-shape": "vee",
           },
         },
+        // PR-3.6: causal-path highlight
+        {
+          selector: "node.causal-path",
+          style: {
+            "border-color": "#7c3aed",
+            "border-width": 3,
+            "background-blacken": -0.05,
+          },
+        },
+        {
+          selector: "edge.causal-path",
+          style: {
+            "line-color": "#7c3aed",
+            "target-arrow-color": "#7c3aed",
+            width: 2.5,
+            "z-index": 999,
+          },
+        },
         {
           selector: "node:selected",
           style: { "border-color": "#3b82f6", "border-width": 3 },
@@ -223,6 +244,19 @@ export function OntologyMap({
       });
     }
 
+    // PR-3.6: apply causal-path class to highlighted nodes + connecting edges
+    if (causalPathIds && causalPathIds.length > 0) {
+      const idSet = new Set(causalPathIds);
+      cyRef.current.nodes().forEach((n) => {
+        if (idSet.has(n.id())) n.addClass("causal-path");
+      });
+      cyRef.current.edges().forEach((e) => {
+        if (idSet.has(e.source().id()) && idSet.has(e.target().id())) {
+          e.addClass("causal-path");
+        }
+      });
+    }
+
     // Expose cy instance in dev mode for debugging/testing
     if (process.env.NODE_ENV !== "production" && typeof window !== "undefined") {
       (window as unknown as { __oelpCy?: Core }).__oelpCy = cyRef.current;
@@ -232,7 +266,7 @@ export function OntologyMap({
       cyRef.current?.destroy();
       cyRef.current = null;
     };
-  }, [elements, onNodeClick]);
+  }, [elements, onNodeClick, causalPathIds]);
 
   return (
     <div
