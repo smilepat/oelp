@@ -103,3 +103,11 @@ playwright-report/
 
 # Vitest coverage (A6)
 coverage/
+
+# Dogfooding / simulation generated artifacts (large JSONs, runtime-produced)
+# Tracked exception: data/dogfood-real-pass2.json (canonical baseline fixture)
+data/dogfood-*.json
+!data/dogfood-real-pass2.json
+data/simulated-dogfooding-*.json
+data/fake-responses.json
+data/responses-test.json
