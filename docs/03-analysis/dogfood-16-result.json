@@ -1,0 +1,56 @@
+{
+  "seed": 17,
+  "n": 300,
+  "target": 0.8,
+  "noiseRate": 0.3,
+  "accuracy": 0.973,
+  "passed": true,
+  "byNoise": {
+    "clean": {
+      "n": 218,
+      "accuracy": 1
+    },
+    "noisy": {
+      "n": 82,
+      "accuracy": 0.902
+    }
+  },
+  "perCategory": {
+    "vocab_unknown": {
+      "total": 60,
+      "truePositives": 59,
+      "precision": 1,
+      "recall": 0.983,
+      "f1": 0.992
+    },
+    "structure_misread": {
+      "total": 60,
+      "truePositives": 60,
+      "precision": 0.882,
+      "recall": 1,
+      "f1": 0.938
+    },
+    "anaphora_lost": {
+      "total": 60,
+      "truePositives": 56,
+      "precision": 1,
+      "recall": 0.933,
+      "f1": 0.966
+    },
+    "discourse_drift": {
+      "total": 60,
+      "truePositives": 57,
+      "precision": 1,
+      "recall": 0.95,
+      "f1": 0.974
+    },
+    "distractor_trap": {
+      "total": 60,
+      "truePositives": 60,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1
+    }
+  },
+  "generatedAt": "2026-05-26T01:18:25.911Z"
+}
