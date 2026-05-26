@@ -21,10 +21,10 @@
     "chart.js": "^4.5.1",
     "cytoscape": "^3.33.4",
     "next": "16.2.6",
-    "react": "19.2.4",
+    "react": "19.2.6",
     "react-chartjs-2": "^5.3.1",
     "react-cytoscapejs": "^2.0.0",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.6"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.11.3",
