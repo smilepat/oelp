@@ -91,8 +91,9 @@ export default function QueuePage() {
   const [done, setDone] = useState(false);
   const [sessionStart] = useState<string>(() => new Date().toISOString());
   // queue.item_answered timing: refreshed each time a new card is shown.
-  const itemStartRef = useRef<number>(Date.now());
+  const itemStartRef = useRef<number>(0);
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/purity
     itemStartRef.current = Date.now();
   }, [currentIdx]);
   const [sessionRecord, setSessionRecord] = useState<SessionRecord | null>(null);
@@ -486,8 +487,8 @@ function GeneratorChainStatus({
   // Parse "chain[ebs-criteria-engine-v1→local-pool-v1]" into ordered steps.
   const steps = useMemo(() => {
     const m = generator.match(/^chain\[(.+)\]$/);
-    if (!m) return [generator];
-    return m[1].split("→");
+    const parsed = m ? m[1].split("→") : [generator];
+    return parsed;
   }, [generator]);
 
   const errorCount = issues.filter((i) => i.severity === "error").length;
@@ -723,6 +724,7 @@ function QueuePlateauNotice({ targetDimensions }: { targetDimensions: string[] }
   useEffect(() => {
     const sessions = loadSessions();
     const r = detectPlateaus(sessions, 4, 3);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setHasD1Plateau(r.hasD1Plateau);
   }, []);
 

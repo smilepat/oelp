@@ -61,7 +61,7 @@ export function PlateauWarningPanel({ sessions }: Props) {
           {result.hasD1Plateau && (
             <div className="mt-1 rounded-md bg-amber-50 px-3 py-2 text-[11px] text-amber-900 dark:bg-amber-950 dark:text-amber-100">
               ⚠️ <strong>D1_Form plateau confirmed in real data</strong>. v10 simulation finding 실증됨 →
-              옵션 A' PR (TYPE-제목 weight + keyVariables 보강) 진행 권장. 시뮬 결과는{" "}
+              옵션 A&apos; PR (TYPE-제목 weight + keyVariables 보강) 진행 권장. 시뮬 결과는{" "}
               <a
                 href="https://github.com/smilepat/myprojects/blob/main/docs/02-design/d1-plateau-option-a-prime.md"
                 target="_blank"
