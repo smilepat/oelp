@@ -26,24 +26,38 @@ on:
 
 jobs:
   smoke:
-    # NOTE 2026-05-24: vocab-cat-test repo is private, so default GITHUB_TOKEN
-    # cannot checkout the sibling. This local-spawn job has never succeeded
-    # in CI for this reason. Kept as non-blocking until either (a) a PAT with
-    # cross-repo read is added as `VOCAB_CAT_TEST_PAT` secret, or (b) the
-    # repo is made public. Primary smoke test is now `cloud-run-smoke` job
-    # below, which validates the deployed Cloud Run revision directly.
+    # NOTE 2026-05-27: vocab-cat-test repo is private. Default GITHUB_TOKEN is
+    # scoped to smilepat/oelp and cannot read the sibling repo (404 from the
+    # repos endpoint). Requires VOCAB_CAT_TEST_PAT (classic PAT `repo` scope,
+    # or fine-grained PAT with smilepat/vocab-cat-test → Contents: Read).
+    #
+    # If the secret is absent the guard step below fails fast with a clear
+    # error instead of relying on a GITHUB_TOKEN fallback that always 404s.
+    # continue-on-error keeps the job non-blocking for the rest of the workflow.
+    # Primary smoke test is cloud-run-smoke job below, which validates the
+    # deployed Cloud Run revision directly.
     runs-on: ubuntu-latest
     timeout-minutes: 15
     continue-on-error: true
 
     steps:
+      - name: Ensure VOCAB_CAT_TEST_PAT is configured
+        env:
+          VOCAB_CAT_TEST_PAT: ${{ secrets.VOCAB_CAT_TEST_PAT }}
+        run: |
+          if [ -z "$VOCAB_CAT_TEST_PAT" ]; then
+            echo "::error::VOCAB_CAT_TEST_PAT secret is required to read smilepat/vocab-cat-test (private repo)."
+            echo "::error::Add a PAT/GitHub App token with read access to smilepat/vocab-cat-test as repo secret VOCAB_CAT_TEST_PAT."
+            exit 1
+          fi
+
       - name: Checkout OELP
         uses: actions/checkout@v4
 
       - name: Checkout vocab-cat-test (sibling)
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.VOCAB_CAT_TEST_PAT || secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.VOCAB_CAT_TEST_PAT }}
           repository: smilepat/vocab-cat-test
           path: vocab-cat-test
           # Default branch (main) — picks up PR #1 dimension_scores fix.
