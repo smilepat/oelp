@@ -25,7 +25,9 @@ jobs:
           cache: "npm"
 
       - name: Install deps
-        run: npm ci
+        # --include=optional: ensure Linux-only optional deps (e.g. @emnapi/*) install
+        # even when package-lock.json was generated on Windows (cross-platform drift).
+        run: npm ci --include=optional
 
       - name: ESLint
         run: npm run lint
