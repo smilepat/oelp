@@ -18,6 +18,12 @@ export interface QuestionType {
   numberRange: string;
   pointValue: number;
   keyVariables: string[];
+  /**
+   * Skill ids (from lib/skill-ontology-seed.json) targeted by this QT.
+   * Added in p2a-ontology PR-3 — pure metadata, does not affect weights
+   * or C4.1 derivation (which only consumes keyVariables).
+   */
+  skillIds: string[];
   /** dimension weights — sum to 1.0. Loaded from ontology-weights.json */
   weights: Record<VocabDimension, number>;
 }
@@ -40,16 +46,16 @@ function w(id: string): Record<VocabDimension, number> {
 // QuestionType metadata (id, name, keyVariables) lives here; weights are JSON.
 // Calibration pipeline only mutates the JSON, never this array.
 export const QUESTION_TYPES: QuestionType[] = [
-  { id: "TYPE-목적",     name: "목적 파악",    numberRange: "18",    pointValue: 2, keyVariables: ["purpose_indirectness", "text_type_variation"], weights: w("TYPE-목적") },
-  { id: "TYPE-심경",     name: "심경·분위기",  numberRange: "19-20", pointValue: 2, keyVariables: ["emotional_indirectness", "emotion_vocab_density"], weights: w("TYPE-심경") },
-  { id: "TYPE-주장",     name: "필자 주장",    numberRange: "22",    pointValue: 2, keyVariables: ["claim_explicitness", "argument_structure"], weights: w("TYPE-주장") },
-  { id: "TYPE-요지",     name: "요지 파악",    numberRange: "23",    pointValue: 2, keyVariables: ["topic_abstractness", "topic_sentence_position"], weights: w("TYPE-요지") },
-  { id: "TYPE-주제",     name: "주제 파악",    numberRange: "24",    pointValue: 2, keyVariables: ["topic_abstractness", "topic_sentence_position", "advanced_vocab"], weights: w("TYPE-주제") },
-  { id: "TYPE-제목",     name: "제목 추론",    numberRange: "25",    pointValue: 2, keyVariables: ["title_abstractness", "metaphor_density"], weights: w("TYPE-제목") },
-  { id: "TYPE-빈칸추론", name: "빈칸 추론",    numberRange: "29-34", pointValue: 3, keyVariables: ["coherence_gap", "abstractness", "context_clue", "advanced_vocab"], weights: w("TYPE-빈칸추론") },
-  { id: "TYPE-흐름무관", name: "흐름무관 문장", numberRange: "35",   pointValue: 3, keyVariables: ["coherence_disruption", "topic_consistency"], weights: w("TYPE-흐름무관") },
-  { id: "TYPE-순서배열", name: "순서 배열",    numberRange: "36-37", pointValue: 3, keyVariables: ["paragraph_dependency", "discourse_marker_density", "discourse_structure"], weights: w("TYPE-순서배열") },
-  { id: "TYPE-문장삽입", name: "문장 삽입",    numberRange: "38-39", pointValue: 3, keyVariables: ["coherence_disruption", "connective_density", "given_sentence_role"], weights: w("TYPE-문장삽입") },
+  { id: "TYPE-목적",     name: "목적 파악",    numberRange: "18",    pointValue: 2, keyVariables: ["purpose_indirectness", "text_type_variation"], skillIds: ["R4", "D5"],                  weights: w("TYPE-목적") },
+  { id: "TYPE-심경",     name: "심경·분위기",  numberRange: "19-20", pointValue: 2, keyVariables: ["emotional_indirectness", "emotion_vocab_density"], skillIds: ["R5", "D5"],            weights: w("TYPE-심경") },
+  { id: "TYPE-주장",     name: "필자 주장",    numberRange: "22",    pointValue: 2, keyVariables: ["claim_explicitness", "argument_structure"], skillIds: ["R3", "R4", "A4"],             weights: w("TYPE-주장") },
+  { id: "TYPE-요지",     name: "요지 파악",    numberRange: "23",    pointValue: 2, keyVariables: ["topic_abstractness", "topic_sentence_position"], skillIds: ["D5"],                    weights: w("TYPE-요지") },
+  { id: "TYPE-주제",     name: "주제 파악",    numberRange: "24",    pointValue: 2, keyVariables: ["topic_abstractness", "topic_sentence_position", "advanced_vocab"], skillIds: ["D5", "A1"], weights: w("TYPE-주제") },
+  { id: "TYPE-제목",     name: "제목 추론",    numberRange: "25",    pointValue: 2, keyVariables: ["title_abstractness", "metaphor_density"], skillIds: ["D5", "A1", "V4"],                weights: w("TYPE-제목") },
+  { id: "TYPE-빈칸추론", name: "빈칸 추론",    numberRange: "29-34", pointValue: 3, keyVariables: ["coherence_gap", "abstractness", "context_clue", "advanced_vocab"], skillIds: ["R6", "D4", "A1"], weights: w("TYPE-빈칸추론") },
+  { id: "TYPE-흐름무관", name: "흐름무관 문장", numberRange: "35",   pointValue: 3, keyVariables: ["coherence_disruption", "topic_consistency"], skillIds: ["R9", "D7"],                    weights: w("TYPE-흐름무관") },
+  { id: "TYPE-순서배열", name: "순서 배열",    numberRange: "36-37", pointValue: 3, keyVariables: ["paragraph_dependency", "discourse_marker_density", "discourse_structure"], skillIds: ["R8", "D7", "D8"], weights: w("TYPE-순서배열") },
+  { id: "TYPE-문장삽입", name: "문장 삽입",    numberRange: "38-39", pointValue: 3, keyVariables: ["coherence_disruption", "connective_density", "given_sentence_role"], skillIds: ["R7", "D8", "D3"], weights: w("TYPE-문장삽입") },
 ];
 
 export const DISTRACTOR_TYPES: DistractorType[] = [
