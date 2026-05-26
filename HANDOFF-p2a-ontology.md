@@ -1,8 +1,8 @@
 # Handoff — p2a-ontology v1 세션 종료
 
-> **Date**: 2026-05-26 (v1) → 2026-05-26 후속 갱신 (v2) → 2026-05-26 Plan A 실행 (v3)
+> **Date**: 2026-05-26 (v1 → v2 → v3 → v4 머지 완료)
 > **세션**: Claude Code Opus 4.7 + smilepat
-> **상태 (v3)**: 🟡 **Plan A 실행 완료, GH Actions backlog 대기 중** — `pr-check.yml` 의 `npm ci` → `npm ci --include=optional` 수정 commit `339832b3` push 완료. 추가 force-trigger empty commit `eff0006`도 push. 그러나 GitHub Actions 가 새 commit (149b9e4, 339832b, eff0006) 에 대해 새 run 을 생성하지 않음 (이전 run 1fa21f40 이 04:57Z 부터 `queued` 상태 정체). `gh workflow run` manual dispatch 도 HTTP 500. **GH Actions infrastructure backlog 또는 free-tier minutes 소진 가능성**. 본인이 다음 세션에서 (1) run 자동 재개 확인 (2) 안 풀리면 GH billing 페이지 확인. 자세한 사항 §9 참조.
+> **상태 (v4)**: 🟢 **PR #6 머지 완료 · /teacher production 활성** — squash merge `f019a6d` (13:23:25Z). production https://oelp-phi.vercel.app/teacher HTTP 200 ✅. PR #7 은 cherry-pick 으로 lint fix 가 PR #6 에 통합되어 redundant close + branch 삭제. 남은 차단 없음. 다음 단계: Dependabot PRs (#1-#5) · dogfooding 사이클 시작. 자세한 사항 §10 참조.
 > **목적**: 다음 세션 (본인 단독 / 다른 Claude 세션) 이 이 문서 한 장으로 즉시 재개 가능하게.
 
 ---
@@ -213,6 +213,7 @@ docs/
 
 ## 7. 변경 이력
 
+- **v4** (2026-05-26 동일 세션 연속): **PR #6 머지 완료** (squash `f019a6d`). PR #7 cherry-pick 후 redundant close. /teacher production 200 ✅. §10 추가, §0 상태 배너 🟢 로 갱신.
 - **v3** (2026-05-26 동일 세션 연속): Plan A 실행 — `pr-check.yml` 의 `npm ci --include=optional` 수정 + force-trigger empty commit. GH Actions 가 새 commit 에 대해 run 미생성 → §9 추가, §0 상태 배너 갱신.
 - 2026-05-26 v1: 본 핸드오프 작성. PR #6 + #7 open 상태. 자율 가능한 모든 작업 소진.
 - 2026-05-26 v2: 후속 세션에서 CI 실패(lockfile drift) 발견 → §8 신규 + 상단 상태 배너 정정. 머지 선결 조건 명시.
@@ -328,4 +329,44 @@ v1 §0 "코드 수정 시점은 끝났고 본인 결단/외부 의존 단계로 
 
 - Empty commit `eff0006` 은 머지 시 squash 되어 history 에서 사라짐 — 문제 없음
 - HANDOFF v3 commit 후 본 세션 종료. 본인이 다음 세션에서 §9.3 Step 1 부터 재개.
+
+---
+
+## 10. v4 — PR #6 머지 완료 (2026-05-26 13:23Z)
+
+### 10.1 머지에 이르기까지
+
+| Commit | 내용 | CI 결과 |
+|---|---|---|
+| `339832b` | `npm ci --include=optional` (Plan A) | run 26449231402 — **fail** (npm ci 가 lockfile sync 거부) |
+| `c64abc9` | `npm install --no-audit --no-fund` (Plan A') | run 26449728544 — install pass, ESLint **fail** (9 errors) |
+| `dde7103` + `42490a6` | PR #7 commit cherry-pick (lint + PRNG seed) | run 26449907149 — install/lint pass, C4.1 **fail** (script bug) |
+| `ada684a` | C4.1 모순수 추출 regex fix (50셀 중 literal 매치 버그) | run 26450118931 — C4.1 pass, A11y **fail** (1 test) |
+| `a97a967` | e2e adaptive-diagnostic fallback assertion regex 매치 | run 26450402244 — **SUCCESS** ✅ |
+| `f019a6d` | **PR #6 squash merge to main** | Vercel auto-deploy → /teacher 200 ✅ |
+
+### 10.2 발견한 4 가지 잠재 버그
+
+1. **package-lock.json cross-platform drift** (Windows 생성 → Linux 누락 `@emnapi/*`) — `npm install` 우회. **근본 fix: WSL/Docker 에서 lockfile 재생성** (별도 PR 권장).
+2. **pr-check.yml 의 C4.1 모순수 추출 regex** — "(50셀 중)" 의 50 매치하여 항상 fail. **fix: `sed -nE 's/.*\*\*:\s+([0-9]+).*/\1/p'`**.
+3. **adaptive-diagnostic.spec.ts fallback test** — active state 전용 literal 매치. **fix: regex `/실제 적응형 진단/`**.
+4. **GH Actions backlog/queue 정체** (자율 풀림). 후속 세션에서는 first push 후 5-10분 대기 권장.
+
+### 10.3 후속 작업 (자율 미진행, 본인 결단)
+
+- **Dependabot PRs #1-#5** (`actions/checkout v6`, `upload-artifact v7`, `eslint 10.4.0`, `@types/cytoscape 3.31.0`, `runtime-frameworks 2 updates`) — main 갱신 후 rebase 필요. 일괄 검토 권장.
+- **dogfooding 첫 사이클** — `/diagnose` → `/queue` → `node scripts/promote-weights.mjs`. 본인 시간 5-10분.
+- **Plan B 영구 fix** — WSL 또는 Docker 에서 `rm package-lock.json && npm install --include=optional` → commit. 한 번 하면 cross-platform drift 영구 해결, `npm ci` 복원 가능.
+- **untracked data 9건 처리** — `.gitignore` 등록 또는 fixture 로 commit.
+- **Node 20 → Node 24 마이그레이션** (2026-06-02 deprecation 강제).
+
+### 10.4 production 검증
+
+- https://oelp-phi.vercel.app/ → 200 ✅
+- https://oelp-phi.vercel.app/diagnose → 200 ✅
+- https://oelp-phi.vercel.app/teacher → **200 ✅** (PR #6 머지로 신규 활성)
+
+### 10.5 메모리 / 핸드오프 종료
+
+본 §10 commit 후 v4 핸드오프 종료. `MEMORY.md` 에 v2/v3/v4 통합 entry 갱신 예정.
 
