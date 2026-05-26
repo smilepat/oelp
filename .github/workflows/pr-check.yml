@@ -25,9 +25,13 @@ jobs:
           cache: "npm"
 
       - name: Install deps
-        # --include=optional: ensure Linux-only optional deps (e.g. @emnapi/*) install
-        # even when package-lock.json was generated on Windows (cross-platform drift).
-        run: npm ci --include=optional
+        # npm install (not `npm ci`): package-lock.json was generated on Windows
+        # and is missing Linux-only transitive optional deps (@emnapi/runtime,
+        # @emnapi/core). `npm ci` rejects this as out-of-sync; `npm install`
+        # auto-heals the lockfile on the runner. --no-audit/--no-fund mute noise.
+        # Trade-off: build is not bit-deterministic; acceptable for PR-check.
+        # Permanent fix is to regenerate lockfile in Linux (Plan B in HANDOFF).
+        run: npm install --no-audit --no-fund
 
       - name: ESLint
         run: npm run lint
