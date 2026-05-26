@@ -21,8 +21,10 @@ test.describe("AdaptiveDiagnostic e2e", () => {
     // We only verify the panel headers regardless of state.
     await page.goto("/diagnose");
     await page.waitForLoadState("networkidle");
-    const panel = page.getByText("실제 적응형 진단 (vocab-cat-test)");
-    await expect(panel).toBeVisible();
+    // Match common prefix — fallback shows "… — 백엔드 미연결",
+    // active shows "… (vocab-cat-test)". Test predates the dual-state split.
+    const panel = page.getByText(/실제 적응형 진단/);
+    await expect(panel.first()).toBeVisible();
   });
 
   test("Full flow with mocked backend → activates diagnostic", async ({ page }) => {
