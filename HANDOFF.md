@@ -12,26 +12,27 @@
 
 ---
 
-## 1. 현재 상태 스냅샷 (v19 종료)
+## 1. 현재 상태 스냅샷 (v20 종료 — p2a-ontology v1 PR open)
 
 | 측면 | 수치 |
 |---|---:|
-| Vitest tests | 387 (41 files) |
-| Playwright e2e | 14 (12 A11y + 2 adaptive) |
-| Routes | 7 (/ + /diagnose + /map + /queue + /sessions + /regression-history + _not-found) |
-| lib 모듈 | 22 |
-| Scripts (oelp) | 33 |
-| Components | 14 |
-| Coverage lines | 98.26% |
-| WCAG 2.1 AA | 12/12 (desktop + mobile) |
-| CI gates | 12 |
+| Vitest tests | **486** (53 files) |
+| Playwright e2e | **16** (14 A11y desktop+mobile + 2 adaptive) |
+| Routes | **8** (+ /teacher) |
+| lib 모듈 | **31** (+ skill-ontology, skill-from-keyvar, skill-mastery, skill-causal-trace, reasoning-strategies, error-pattern-analyzer, prompt-evolution, teacher-aggregate, teacher-mock-learners) |
+| Scripts (oelp) | **37** (+ validate-skill-ontology, simulate-skill-mapping, prompt-iterate, dogfood-16) |
+| Components | **17** (+ SkillMasteryRadar, ErrorCategoryChart, SkillHeatmap) |
+| Coverage lines | 98.26% (PR #6 머지 후 재측정 필요) |
+| WCAG 2.1 AA | **16/16** (8 routes × 2 viewports, /teacher heatmap palette WCAG AA verified) |
+| CI gates | **13** (+ validate-skill-ontology) |
 | GitHub Actions | 3 (pr-check, weekly-calibration, vocab-cat-test-smoke) |
 | myprojects docs | 57 |
 | **PRD risks** | R1-R7 (R6 D1_Form + R7 retention) |
-| **Closed-loop iterations** | 6 확정 + 7번째 PR-ready |
-| **자동 활성 surfaces** | 9 |
-| **운영 모니터링 도구** | 9 |
+| **Closed-loop iterations** | 6 확정 + 7번째 PR-ready + p2a-ontology 자가진화 5모듈 |
+| **자동 활성 surfaces** | **12** (+ SkillMasteryRadar, ErrorCategoryChart, SkillHeatmap) |
+| **운영 모니터링 도구** | **10** (+ dogfood-16 분류기 정확도) |
 | Production | Vercel + Cloud Run 양쪽 |
+| **Open PRs** | #6 (p2a-ontology, 14 commits) + #7 (lint cleanup, 2 commits) |
 
 ---
 

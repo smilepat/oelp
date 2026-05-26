@@ -49,7 +49,7 @@ const baseUrl = args["base-url"] ?? "https://oelp-phi.vercel.app";
 const ttfbThreshold = args["ttfb-threshold"] ? parseInt(args["ttfb-threshold"], 10) : 1000;
 const sizeThreshold = args["size-threshold"] ? parseInt(args["size-threshold"], 10) : 500 * 1024;
 
-const ROUTES = ["/", "/diagnose", "/map", "/queue", "/sessions", "/regression-history"];
+const ROUTES = ["/", "/diagnose", "/map", "/queue", "/sessions", "/regression-history", "/teacher"];
 
 async function measureRoute(path) {
   const url = `${baseUrl}${path}`;

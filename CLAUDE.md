@@ -17,23 +17,24 @@ OELP = LogicFlow EdTech 생태계의 **통합 학습 플랫폼** (Next.js 16 + V
 - Phase 1 MVP + P-1 추천 v2 + P-1.5/b Bridge + P-2 EBS Foundation **모두 완료**
 - 자동 평가 12 C 기준 **12/12 measured PASS** (C1.1/C1.2 vocab-cat-test 실측 포함)
 
-## 2. 현재 상태 (v9 sprint 종료 — Stage B 진입 + 7번째 closed-loop 후보 확정)
+## 2. 현재 상태 (v20 sprint 종료 — p2a-ontology v1 13 PR + lint cleanup PR open)
 
 | 측면 | 수치 |
 |---|---|
-| Vitest tests | 342 (36 files) |
-| Playwright e2e | 14 (12 A11y + 2 adaptive) |
-| Routes | 7 (/ /diagnose /map /queue /sessions /regression-history + _not-found) |
-| lib 모듈 | 20 |
-| Scripts | 21 (dogfood-8 multi-archetype + d1-boost 추가) |
-| Components | 12 |
+| Vitest tests | **486** (53 files) |
+| Playwright e2e | **16** (14 A11y desktop+mobile × 8 routes + 2 adaptive) |
+| Routes | **8** (/ /diagnose /map /queue /sessions /regression-history /teacher + _not-found) |
+| lib 모듈 | **31** |
+| Scripts | **37** (validate-skill-ontology, simulate-skill-mapping, prompt-iterate, dogfood-16 추가) |
+| Components | **17** |
 | Coverage (lines) | 97.79% (threshold 93/80/95/90) |
-| WCAG 2.1 AA | 12/12 (desktop + mobile, **Production URL 검증 12/12 PASS**) |
-| CI 단계 | 11 (lint → vitest → schema → README freshness → C4.1 → C4.2 → build → coverage → A11y desktop/mobile → cross-link → cloud-run-smoke) |
+| WCAG 2.1 AA | **16/16** (8 routes × 2 viewports, /teacher heatmap palette WCAG AA verified) |
+| CI 단계 | **13** (+ validate-skill-ontology, /teacher A11y) |
 | GitHub Actions | 3 (pr-check, weekly-calibration, vocab-cat-test-smoke + cloud-run-smoke job) |
 | 외부 배포 | **Vercel + Cloud Run 양쪽 Production** (`oelp-phi.vercel.app` + `vocab-cat-api-452237528328.asia-northeast3.run.app`) |
 | Analytics events | 11/11 자율 wiring 완성 (Supabase config 대기) |
-| Closed-loop iterations | **6 확정** (Tier 1-3 → λ → exploration → adaptive prep → adaptive verify → cohort exploration) + **7번째 후보 발견** (D1_Form plateau) |
+| Closed-loop iterations | **6 확정** + **7번째 PR-ready (D1_Form plateau)** + **p2a-ontology 자가진화 5모듈 완비** (error-pattern, recommendation, validator, prompt-evolution, item-quality) |
+| p2a-ontology | **v1 완비** — 33 skill (V5+S5+D8+R10+A5) × 38 edges × 3 edge types (핵심 의존/보조 영향/간접 연관). /teacher dashboard (8번째 route). SkillMasteryRadar + ErrorCategoryChart + SkillHeatmap (10-12번째 surface). PR #6 13 commits. |
 
 ## 3. 자주 쓰는 명령
 
@@ -227,3 +228,4 @@ vocab-cat-test (semantic/contextual/form/relational/pragmatic) ↔ OELP (D2/D3/D
 - 2026-05-25 v17: **dogfood-13 forgetting + 옵션 A' 결합** (weak-D1/D2/D3에서 D1 **+113~160%p 회복**, side effect 0, SAFE verdict) + **dogfood-12 정식 보고서** (myprojects docs) + c4-3-trend-cli **8 contract tests** (sentinel: D1 slope=0) → 옵션 A' PR 시간 차원 정당화 **3 단계 완성** (plateau → negative gap → 회복)
 - 2026-05-25 v18: **AGENTS.md 갱신** (다음 세션 Claude onboarding 컨텍스트 9 절) + **dogfood-14 spike pattern** (휴학×2 후 모든 dim negative gap → 학습자 retention > 모집) + **web-vitals-audit.mjs** (production HTTP TTFB/size/compression baseline) → 운영 모니터링 도구 8→9
 - 2026-05-25 v19: **Phase 2 PRD R7** (학습자 retention risk 정식) + **dogfood-15 spike variants** (1w/2w/4w/8w 단일 휴학 안전 vs **반복 cycle만 치명적** -57.3% 임계 명확화) + **RetentionDashboard + lib/retention-analysis.ts** (9번째 surface, safe/single-break/repeated-cycle 자동 분류, 8 tests) → retention finding 6 층위 정합성 완성
+- 2026-05-26 v20: **p2a-ontology v1 완료** — `feature/p2a-ontology` 브랜치에 PR-1~8 + PR-3.5/3.6/3.7/4/5/6/7/7b/7c + a11y/distractor 14 commits → PR #6. 33-skill (V5+S5+D8+R10+A5) + 38-edge (18 핵심 의존/12 보조 영향/8 간접 연관) 시각화 (OntologyMap 확장 + skill layer overlay), **/teacher dashboard (8번째 route, 12번째 surface SkillHeatmap)**, 자가진화 5모듈 (error-pattern 5분류 dogfood-16 97.3% / prompt-evolution rule-based / SkillMasteryRadar / ErrorCategoryChart / 약점→원인 traceback). C4.1 tau 0.6 baseline 보존 (simulate-skill-mapping.mjs gate). Vitest 387 → 486 (+99), CI 12 → 13 gate, 16/16 A11y. **PR #7 (chore/lint-cleanup)**: 9 baseline lint errors → 0 + irt-cold-start T7 flake 결정적 통과.
