@@ -1,8 +1,8 @@
 # Handoff — p2a-ontology v1 세션 종료
 
-> **Date**: 2026-05-26
+> **Date**: 2026-05-26 (v1) → 2026-05-26 후속 갱신 (v2)
 > **세션**: Claude Code Opus 4.7 + smilepat
-> **상태**: 2 PR open + GitHub 대기 (PR #6, #7). 코드 수정 시점은 끝났고 본인 결단/외부 의존 단계로 진입.
+> **상태 (v2)**: 🔴 **PR #6 + #7 머지 차단** — `test-and-build` CI 가 lockfile drift(`@emnapi/runtime` & `@emnapi/core` missing from `package-lock.json`)로 실패. 코드 자체는 그대로 valid. **CI fix 가 머지 선결 조건**으로 격상. 자세한 진단/recovery 옵션은 §8 참조.
 > **목적**: 다음 세션 (본인 단독 / 다른 Claude 세션) 이 이 문서 한 장으로 즉시 재개 가능하게.
 
 ---
@@ -214,3 +214,72 @@ docs/
 ## 7. 변경 이력
 
 - 2026-05-26 v1: 본 핸드오프 작성. PR #6 + #7 open 상태. 자율 가능한 모든 작업 소진.
+- 2026-05-26 v2: 후속 세션에서 CI 실패(lockfile drift) 발견 → §8 신규 + 상단 상태 배너 정정. 머지 선결 조건 명시.
+
+---
+
+## 8. CI 차단 — lockfile drift (v2 신규)
+
+### 8.1 증상
+
+- PR #6 (run `26433153570`) · PR #7 (run `26430241591`) — 둘 다 `test-and-build` job FAILURE
+- Vercel preview deploy 는 SUCCESS · Sourcery review SUCCESS · `mergeable=MERGEABLE` (conflict 없음)
+- 즉 코드 자체는 valid, **CI 환경 의존성만** 문제
+
+### 8.2 원인
+
+```
+npm error code EUSAGE
+npm error `npm ci` can only install packages when your package.json and
+package-lock.json or npm-shrinkwrap.json are in sync. Please update your lock
+file with `npm install` before continuing.
+npm error
+npm error Missing: @emnapi/runtime@1.10.0 from lock file
+npm error Missing: @emnapi/core@1.10.0 from lock file
+```
+
+- `package.json` 에 `@emnapi/*` 직접 의존 0건 · `package-lock.json` 에 15회 출현 → **transitive optional dep**
+- Windows 로컬에서 `npm install` 시 "up to date" 반환 (Windows에선 emnapi 불필요) 하지만 **Linux CI(`npm ci`)에선 platform-specific optional dep 필요**
+- 결론: **Windows 로컬에서 생성된 lockfile이 Linux용 optional dep 항목을 누락** — cross-platform drift
+
+### 8.3 Recovery 옵션
+
+**Plan A — CI 워크플로 수정** (추천, 최소 침습)
+```
+1. main 브랜치에 hotfix PR — .github/workflows/*.yml 의 `npm ci` 를 `npm ci --include=optional`
+   또는 `npm install --no-save` (npm v10 기준 동작 차이 사전 검증)
+2. 두 PR(#6, #7) 을 main 에 rebase → CI 재실행
+3. 머지 진행
+```
+예상 +15분 · 1줄 변경 · risk 낮음
+
+**Plan B — lockfile 전면 재생성**
+```
+1. WSL/Docker Linux 환경에서 rm package-lock.json && npm install
+2. 두 PR 브랜치에 각각 적용 + push
+3. 머지 진행
+```
+예상 +30분 · 큰 diff · 다른 dep 버전도 흔들릴 risk
+
+**Plan C — dogfooding 먼저, CI fix 보류**
+```
+1. plan 1/2(머지) 보류, plan 3(dogfooding) 먼저 시작
+2. 백그라운드로 CI fix
+```
+예상 +0분 · 단점: PR stale, /teacher 등 신규 라우트 production 진입 지연
+
+### 8.4 production 배포 검증 (참고)
+
+- **Production URL**: https://oelp-phi.vercel.app (HTTP 200 live)
+- `/` 200 ✅ · `/diagnose` 200 ✅ · `/teacher` 404 ⚠️ (PR #6 머지 전이라 미배포)
+- PR #6 merge 후 자동 production 갱신 예정 (Vercel ↔ GitHub 연동)
+
+### 8.5 v1 → v2 진술 정정
+
+v1 §0 "코드 수정 시점은 끝났고 본인 결단/외부 의존 단계로 진입" 은 **부분만 사실**. CI fix 는 외부 의존 아닌 **자율 가능한 코드/워크플로 수정 작업**. 다음 세션은 머지 전에 Plan A/B/C 선택 후 실행 필요.
+
+### 8.6 부수 발견
+
+- `data/` 디렉토리에 untracked JSON 9건 (`dogfood-*.json`, `fake-responses.json` 등) — `.gitignore` 등록 또는 정리 결단 필요
+- Node 20 deprecation 경고 (2026-06-02 부터 Node 24 강제) — 별도 PR 권장
+
