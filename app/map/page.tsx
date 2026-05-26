@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { OntologyMap } from "@/components/OntologyMap";
+import { SkillMasteryRadar } from "@/components/SkillMasteryRadar";
 import { QUESTION_TYPES, DISTRACTOR_TYPES } from "@/lib/ontology";
 import { DEMO_DIAGNOSTIC } from "@/lib/diagnostic";
 import { compareWeights } from "@/lib/kv-dim-mapping";
@@ -91,7 +92,6 @@ export default function MapPage() {
           type="button"
           onClick={() => setShowSkills((v) => !v)}
           className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm text-zinc-900 transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50 dark:hover:bg-zinc-700"
-          aria-pressed={showSkills ? "true" : "false"}
         >
           {showSkills ? "역량 그래프 끄기" : "역량 그래프 켜기 (P2A)"}
         </button>
@@ -127,6 +127,10 @@ export default function MapPage() {
           causalPathIds={showSkills ? causalPathIds : undefined}
         />
       </div>
+
+      {showSkills && scores && (
+        <SkillMasteryRadar scores={scores} />
+      )}
 
       {selectedSkill && showSkills && (
         <section
