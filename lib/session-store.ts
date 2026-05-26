@@ -24,6 +24,13 @@ export interface SessionResponseRecord {
   /** Dimension scores in effect at the time (for calibration export) */
   dimensionScores: Partial<Record<VocabDimension, number>>;
   at: string;
+  /**
+   * Optional — id of the distractor pattern the learner picked when wrong.
+   * Added in p2a-ontology follow-up so the error pattern classifier can use
+   * its high-confidence override path. Backward compatible: old envelopes
+   * without this field still parse (schemaVersion stays at 1).
+   */
+  distractorPicked?: string;
 }
 
 export interface SessionEvaluation {

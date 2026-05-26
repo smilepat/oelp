@@ -8,14 +8,23 @@ interface Props {
   learners: LearnerInput[];
 }
 
-// Same 5-bucket palette OntologyMap uses (color-blind friendly)
-function colorFor(m: number | null): string {
-  if (m === null) return "transparent";
-  if (m < 25) return "#ef4444"; // red
-  if (m < 45) return "#f97316"; // orange
-  if (m < 65) return "#eab308"; // yellow
-  if (m < 85) return "#84cc16"; // lime
-  return "#22c55e"; // green
+// 5-bucket palette — bg + matching fg chosen so each pair meets WCAG AA
+// 4.5:1 contrast at 10px / 400-weight (axe-core verified).
+const PALETTE: { bg: string; fg: string }[] = [
+  { bg: "#7f1d1d", fg: "#fef2f2" }, // red-900 / red-50 — bucket 0 (lowest)
+  { bg: "#9a3412", fg: "#fff7ed" }, // orange-800 / orange-50
+  { bg: "#713f12", fg: "#fefce8" }, // yellow-900 / yellow-50
+  { bg: "#365314", fg: "#f7fee7" }, // lime-900 / lime-50
+  { bg: "#14532d", fg: "#f0fdf4" }, // green-900 / green-50 — bucket 4 (highest)
+];
+
+function paletteFor(m: number | null): { bg: string; fg: string } {
+  if (m === null) return { bg: "transparent", fg: "inherit" };
+  if (m < 25) return PALETTE[0];
+  if (m < 45) return PALETTE[1];
+  if (m < 65) return PALETTE[2];
+  if (m < 85) return PALETTE[3];
+  return PALETTE[4];
 }
 
 /**
@@ -57,11 +66,12 @@ export function SkillHeatmap({ rows, learners }: Props) {
               </th>
               {learners.map((l) => {
                 const m = r.perLearner[l.id];
+                const { bg, fg } = paletteFor(m);
                 return (
                   <td
                     key={l.id}
-                    className="px-2 py-1 text-center"
-                    style={{ backgroundColor: colorFor(m) }}
+                    className="px-2 py-1 text-center font-semibold tabular-nums"
+                    style={{ backgroundColor: bg, color: fg }}
                     aria-label={
                       m === null
                         ? `${l.label} ${r.skill.id} 측정 없음`

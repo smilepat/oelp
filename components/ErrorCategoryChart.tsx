@@ -41,6 +41,9 @@ export function ErrorCategoryChart({ sessions }: Props) {
         .map((r) => ({
           qtId: r.qtId,
           dimensionScores: r.dimensionScores,
+          // Use optional distractorPicked when present so the classifier
+          // can hit its high-confidence override path (PR-7 + follow-up).
+          distractorPicked: r.distractorPicked,
         }))
     );
     return aggregateErrorCategories(inputs);
