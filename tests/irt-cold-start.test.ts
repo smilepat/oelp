@@ -90,13 +90,28 @@ describe("recalibrateCard (P-2 W5)", () => {
   test("T7: Varied theta responses → b converges to true difficulty", () => {
     // True b = -0.5 (card slightly easier than average). Generate responses
     // from learners with theta ∈ [-2, 2] and Bernoulli with true Rasch.
+    //
+    // Seeded PRNG (mulberry32) makes the test deterministic — previously
+    // Math.random() produced 0.30-0.40 absolute error on roughly 1 in 20
+    // runs, causing CI flake on the 0.3 tolerance.
+    function mulberry32(seed: number) {
+      let a = seed >>> 0;
+      return function () {
+        a = (a + 0x6d2b79f5) >>> 0;
+        let t = a;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+    const rand = mulberry32(17);
     const TRUE_B = -0.5;
     const N = 200;
     const responses: ResponseDatum[] = [];
     for (let i = 0; i < N; i++) {
       const theta = -2 + (i / N) * 4; // uniform [-2, 2]
       const p = 1 / (1 + Math.exp(TRUE_B - theta));
-      const isCorrect = Math.random() < p;
+      const isCorrect = rand() < p;
       responses.push({ theta, isCorrect });
     }
     // Use weak prior so MLE dominates

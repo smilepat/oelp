@@ -1,0 +1,159 @@
+{
+  "margin": 5,
+  "scenarios": [
+    {
+      "targetDim": "D1_Form",
+      "baseline": {
+        "V": 70,
+        "S": 70,
+        "D": 70,
+        "R": 70,
+        "A": 70
+      },
+      "perturbed": {
+        "V": 60,
+        "S": 50,
+        "D": 70,
+        "R": 67.5,
+        "A": 70
+      },
+      "deltas": {
+        "V": 10,
+        "S": 20,
+        "D": 0,
+        "R": 2.5,
+        "A": 0
+      },
+      "medianDelta": 2.5,
+      "primaryLayers": [
+        "V",
+        "S"
+      ],
+      "pass": true
+    },
+    {
+      "targetDim": "D2_Meaning",
+      "baseline": {
+        "V": 70,
+        "S": 70,
+        "D": 70,
+        "R": 70,
+        "A": 70
+      },
+      "perturbed": {
+        "V": 55,
+        "S": 70,
+        "D": 70,
+        "R": 61.79,
+        "A": 65
+      },
+      "deltas": {
+        "V": 15,
+        "S": 0,
+        "D": 0,
+        "R": 8.21,
+        "A": 5
+      },
+      "medianDelta": 5,
+      "primaryLayers": [
+        "V"
+      ],
+      "pass": true
+    },
+    {
+      "targetDim": "D3_Context",
+      "baseline": {
+        "V": 70,
+        "S": 70,
+        "D": 70,
+        "R": 70,
+        "A": 70
+      },
+      "perturbed": {
+        "V": 65,
+        "S": 40,
+        "D": 29.38,
+        "R": 45.89,
+        "A": 55
+      },
+      "deltas": {
+        "V": 5,
+        "S": 30,
+        "D": 40.63,
+        "R": 24.11,
+        "A": 15
+      },
+      "medianDelta": 24.11,
+      "primaryLayers": [
+        "S",
+        "D"
+      ],
+      "pass": true
+    },
+    {
+      "targetDim": "D4_Network",
+      "baseline": {
+        "V": 70,
+        "S": 70,
+        "D": 70,
+        "R": 70,
+        "A": 70
+      },
+      "perturbed": {
+        "V": 50,
+        "S": 70,
+        "D": 60.63,
+        "R": 64.29,
+        "A": 40
+      },
+      "deltas": {
+        "V": 20,
+        "S": 0,
+        "D": 9.38,
+        "R": 5.71,
+        "A": 30
+      },
+      "medianDelta": 9.38,
+      "primaryLayers": [
+        "V",
+        "A"
+      ],
+      "pass": true
+    },
+    {
+      "targetDim": "D5_Usage",
+      "baseline": {
+        "V": 70,
+        "S": 70,
+        "D": 70,
+        "R": 70,
+        "A": 70
+      },
+      "perturbed": {
+        "V": 70,
+        "S": 70,
+        "D": 70,
+        "R": 60.54,
+        "A": 70
+      },
+      "deltas": {
+        "V": 0,
+        "S": 0,
+        "D": 0,
+        "R": 9.46,
+        "A": 0
+      },
+      "medianDelta": 0,
+      "primaryLayers": [
+        "R"
+      ],
+      "pass": true
+    }
+  ],
+  "passed": true,
+  "summary": {
+    "total": 5,
+    "passing": 5
+  }
+}
+[ PASS ] 5/5 dim perturbations isolate a primary layer (margin >= 5)

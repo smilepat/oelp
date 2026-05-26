@@ -1,15 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { OntologyMap } from "@/components/OntologyMap";
+import { SkillMasteryRadar } from "@/components/SkillMasteryRadar";
 import { QUESTION_TYPES, DISTRACTOR_TYPES } from "@/lib/ontology";
 import { DEMO_DIAGNOSTIC } from "@/lib/diagnostic";
 import { compareWeights } from "@/lib/kv-dim-mapping";
 import { logEvent } from "@/lib/analytics-events";
+import { getNode } from "@/lib/skill-ontology";
+import {
+  traceRootCauses,
+  recommendNextSteps,
+  getCausalPathNodeIds,
+} from "@/lib/skill-causal-trace";
 
 export default function MapPage() {
   const [useDemo, setUseDemo] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [showSkills, setShowSkills] = useState(false);
 
   const scores = useDemo ? DEMO_DIAGNOSTIC.dimensionScores : undefined;
 
@@ -17,6 +25,22 @@ export default function MapPage() {
   const selectedDist = selectedId
     ? DISTRACTOR_TYPES.find((d) => d.id === selectedId)
     : null;
+  // PR-3.6: when a skill node is selected, derive causal trace
+  const selectedSkill = selectedId && /^[VSDRA][0-9]+$/.test(selectedId)
+    ? getNode(selectedId) ?? null
+    : null;
+  const causalPathIds = useMemo(
+    () => (selectedSkill ? getCausalPathNodeIds(selectedSkill.id) : []),
+    [selectedSkill]
+  );
+  const rootCauses = useMemo(
+    () => (selectedSkill ? traceRootCauses(selectedSkill.id) : []),
+    [selectedSkill]
+  );
+  const nextSteps = useMemo(
+    () => (selectedSkill ? recommendNextSteps(selectedSkill.id) : []),
+    [selectedSkill]
+  );
 
   // Log map view on mount (one-shot per page visit)
   useEffect(() => {
@@ -64,20 +88,128 @@ export default function MapPage() {
         >
           {useDemo ? "약점 색상 끄기" : "데모 진단 로드 (약점 색상)"}
         </button>
+        <button
+          type="button"
+          onClick={() => setShowSkills((v) => !v)}
+          className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm text-zinc-900 transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50 dark:hover:bg-zinc-700"
+        >
+          {showSkills ? "역량 그래프 끄기" : "역량 그래프 켜기 (P2A)"}
+        </button>
         {useDemo && (
           <p className="text-xs text-zinc-500">
             weak: {DEMO_DIAGNOSTIC.weakDim.join(", ")} · strong:{" "}
             {DEMO_DIAGNOSTIC.strongDim.join(", ")}
           </p>
         )}
+        {showSkills && (
+          <p className="text-xs text-zinc-500">
+            P→V→S→D→R→A 33 역량 + 38 의존선 표시 · 핵심 의존(실선) / 보조 영향(점선) /
+            간접 연관(점점선)
+          </p>
+        )}
       </section>
 
       <div className="block sm:hidden">
-        <OntologyMap scores={scores} onNodeClick={handleNodeClick} height={360} />
+        <OntologyMap
+          scores={scores}
+          onNodeClick={handleNodeClick}
+          height={360}
+          includeSkills={showSkills}
+          causalPathIds={showSkills ? causalPathIds : undefined}
+        />
       </div>
       <div className="hidden sm:block">
-        <OntologyMap scores={scores} onNodeClick={handleNodeClick} height={560} />
+        <OntologyMap
+          scores={scores}
+          onNodeClick={handleNodeClick}
+          height={560}
+          includeSkills={showSkills}
+          causalPathIds={showSkills ? causalPathIds : undefined}
+        />
       </div>
+
+      {showSkills && scores && (
+        <SkillMasteryRadar scores={scores} />
+      )}
+
+      {selectedSkill && showSkills && (
+        <section
+          className="rounded-lg border border-violet-200 bg-violet-50 p-4 text-sm dark:border-violet-900 dark:bg-violet-950"
+          aria-label="역량 약점 원인 추적"
+        >
+          <header className="mb-3 flex items-baseline justify-between">
+            <h2 className="font-semibold text-violet-900 dark:text-violet-100">
+              선택: {selectedSkill.name}{" "}
+              <span className="text-xs text-violet-600 dark:text-violet-300">
+                ({selectedSkill.id} · {selectedSkill.layer}-layer)
+              </span>
+            </h2>
+            <button
+              type="button"
+              onClick={() => setSelectedId(null)}
+              className="text-xs text-violet-700 underline hover:no-underline dark:text-violet-300"
+            >
+              닫기
+            </button>
+          </header>
+          <p className="mb-3 text-xs leading-relaxed text-violet-800 dark:text-violet-200">
+            {selectedSkill.description}
+          </p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-violet-700 dark:text-violet-300">
+                근본 원인 후보 (top {rootCauses.length})
+              </p>
+              {rootCauses.length === 0 ? (
+                <p className="text-xs text-violet-600 dark:text-violet-400">
+                  이 역량은 더 이상 거슬러 올라갈 선행 의존이 없습니다 (root skill).
+                </p>
+              ) : (
+                <ul className="space-y-1">
+                  {rootCauses.map((c) => {
+                    const node = getNode(c.skillId);
+                    return (
+                      <li key={c.skillId} className="text-xs text-violet-900 dark:text-violet-100">
+                        <span className="font-mono">{c.skillId}</span>{" "}
+                        {node?.name ?? "(unknown)"}{" "}
+                        <span className="text-violet-500">· depth {c.depth}</span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+            <div>
+              <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-violet-700 dark:text-violet-300">
+                추천 학습 순서 (≤5)
+              </p>
+              {nextSteps.length === 0 ? (
+                <p className="text-xs text-violet-600 dark:text-violet-400">
+                  추천 경로 없음.
+                </p>
+              ) : (
+                <ol className="space-y-1">
+                  {nextSteps.map((c, idx) => {
+                    const node = getNode(c.skillId);
+                    return (
+                      <li key={c.skillId} className="text-xs text-violet-900 dark:text-violet-100">
+                        <span className="font-mono">{idx + 1}.</span>{" "}
+                        <span className="font-mono">{c.skillId}</span>{" "}
+                        {node?.name ?? "(unknown)"}
+                        {c.isRoot && (
+                          <span className="ml-1 rounded bg-violet-200 px-1 text-[9px] uppercase text-violet-800 dark:bg-violet-800 dark:text-violet-200">
+                            root
+                          </span>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ol>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
 
       <section className="grid gap-4 sm:grid-cols-2">
         <DetailPanel

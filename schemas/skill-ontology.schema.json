@@ -1,0 +1,78 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Skill Ontology",
+  "description": "P→V→S→D→R→A 6-layer English learning competency graph (PR-1 of p2a-ontology).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "version", "nodes", "edges"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "version": {
+      "type": "string",
+      "pattern": "^v[0-9]+-[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "nodes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "layer",
+          "name",
+          "nameEn",
+          "description",
+          "gradeLevel",
+          "measuredByDims",
+          "measuredByQts",
+          "measuredByKeyVars",
+          "mvpActive"
+        ],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[PVSDRA][0-9]+$" },
+          "layer": { "enum": ["P", "V", "S", "D", "R", "A"] },
+          "name": { "type": "string", "minLength": 1 },
+          "nameEn": { "type": "string", "minLength": 1 },
+          "description": { "type": "string", "minLength": 1 },
+          "gradeLevel": {
+            "enum": ["elem_1_3", "elem_4_6", "middle", "high", "csat"]
+          },
+          "measuredByDims": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "measuredByQts": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "measuredByKeyVars": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "mvpActive": { "type": "boolean" }
+        }
+      }
+    },
+    "edges": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["from", "to", "type"],
+        "properties": {
+          "from": { "type": "string", "pattern": "^[PVSDRA][0-9]+$" },
+          "to": { "type": "string", "pattern": "^[PVSDRA][0-9]+$" },
+          "type": {
+            "enum": [
+              "core_dependency",
+              "supportive_influence",
+              "indirect_relation"
+            ]
+          },
+          "note": { "type": "string" }
+        }
+      }
+    }
+  }
+}

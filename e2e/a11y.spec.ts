@@ -18,6 +18,7 @@ const ROUTES = [
   { path: "/queue", name: "queue" },
   { path: "/sessions", name: "sessions" },
   { path: "/regression-history", name: "regression-history" },
+  { path: "/teacher", name: "teacher" },
 ];
 
 const VIEWPORTS = [

@@ -11,6 +11,9 @@ import type { VocabDimension } from "./diagnostic";
 // Single source of truth for QuestionType weights — promote-weights.mjs only
 // writes to this file, never to the ontology.ts QUESTION_TYPES literal.
 import weightsModule from "./ontology-weights.json";
+// Skill ontology seed (PR-3.5) — referenced only when includeSkills=true,
+// but imported eagerly because client bundles cannot use require().
+import skillSeed from "./skill-ontology-seed.json";
 
 export interface QuestionType {
   id: string;
@@ -18,6 +21,12 @@ export interface QuestionType {
   numberRange: string;
   pointValue: number;
   keyVariables: string[];
+  /**
+   * Skill ids (from lib/skill-ontology-seed.json) targeted by this QT.
+   * Added in p2a-ontology PR-3 — pure metadata, does not affect weights
+   * or C4.1 derivation (which only consumes keyVariables).
+   */
+  skillIds: string[];
   /** dimension weights — sum to 1.0. Loaded from ontology-weights.json */
   weights: Record<VocabDimension, number>;
 }
@@ -40,16 +49,16 @@ function w(id: string): Record<VocabDimension, number> {
 // QuestionType metadata (id, name, keyVariables) lives here; weights are JSON.
 // Calibration pipeline only mutates the JSON, never this array.
 export const QUESTION_TYPES: QuestionType[] = [
-  { id: "TYPE-목적",     name: "목적 파악",    numberRange: "18",    pointValue: 2, keyVariables: ["purpose_indirectness", "text_type_variation"], weights: w("TYPE-목적") },
-  { id: "TYPE-심경",     name: "심경·분위기",  numberRange: "19-20", pointValue: 2, keyVariables: ["emotional_indirectness", "emotion_vocab_density"], weights: w("TYPE-심경") },
-  { id: "TYPE-주장",     name: "필자 주장",    numberRange: "22",    pointValue: 2, keyVariables: ["claim_explicitness", "argument_structure"], weights: w("TYPE-주장") },
-  { id: "TYPE-요지",     name: "요지 파악",    numberRange: "23",    pointValue: 2, keyVariables: ["topic_abstractness", "topic_sentence_position"], weights: w("TYPE-요지") },
-  { id: "TYPE-주제",     name: "주제 파악",    numberRange: "24",    pointValue: 2, keyVariables: ["topic_abstractness", "topic_sentence_position", "advanced_vocab"], weights: w("TYPE-주제") },
-  { id: "TYPE-제목",     name: "제목 추론",    numberRange: "25",    pointValue: 2, keyVariables: ["title_abstractness", "metaphor_density"], weights: w("TYPE-제목") },
-  { id: "TYPE-빈칸추론", name: "빈칸 추론",    numberRange: "29-34", pointValue: 3, keyVariables: ["coherence_gap", "abstractness", "context_clue", "advanced_vocab"], weights: w("TYPE-빈칸추론") },
-  { id: "TYPE-흐름무관", name: "흐름무관 문장", numberRange: "35",   pointValue: 3, keyVariables: ["coherence_disruption", "topic_consistency"], weights: w("TYPE-흐름무관") },
-  { id: "TYPE-순서배열", name: "순서 배열",    numberRange: "36-37", pointValue: 3, keyVariables: ["paragraph_dependency", "discourse_marker_density", "discourse_structure"], weights: w("TYPE-순서배열") },
-  { id: "TYPE-문장삽입", name: "문장 삽입",    numberRange: "38-39", pointValue: 3, keyVariables: ["coherence_disruption", "connective_density", "given_sentence_role"], weights: w("TYPE-문장삽입") },
+  { id: "TYPE-목적",     name: "목적 파악",    numberRange: "18",    pointValue: 2, keyVariables: ["purpose_indirectness", "text_type_variation"], skillIds: ["R4", "D5"],                  weights: w("TYPE-목적") },
+  { id: "TYPE-심경",     name: "심경·분위기",  numberRange: "19-20", pointValue: 2, keyVariables: ["emotional_indirectness", "emotion_vocab_density"], skillIds: ["R5", "D5"],            weights: w("TYPE-심경") },
+  { id: "TYPE-주장",     name: "필자 주장",    numberRange: "22",    pointValue: 2, keyVariables: ["claim_explicitness", "argument_structure"], skillIds: ["R3", "R4", "A4"],             weights: w("TYPE-주장") },
+  { id: "TYPE-요지",     name: "요지 파악",    numberRange: "23",    pointValue: 2, keyVariables: ["topic_abstractness", "topic_sentence_position"], skillIds: ["D5"],                    weights: w("TYPE-요지") },
+  { id: "TYPE-주제",     name: "주제 파악",    numberRange: "24",    pointValue: 2, keyVariables: ["topic_abstractness", "topic_sentence_position", "advanced_vocab"], skillIds: ["D5", "A1"], weights: w("TYPE-주제") },
+  { id: "TYPE-제목",     name: "제목 추론",    numberRange: "25",    pointValue: 2, keyVariables: ["title_abstractness", "metaphor_density"], skillIds: ["D5", "A1", "V4"],                weights: w("TYPE-제목") },
+  { id: "TYPE-빈칸추론", name: "빈칸 추론",    numberRange: "29-34", pointValue: 3, keyVariables: ["coherence_gap", "abstractness", "context_clue", "advanced_vocab"], skillIds: ["R6", "D4", "A1"], weights: w("TYPE-빈칸추론") },
+  { id: "TYPE-흐름무관", name: "흐름무관 문장", numberRange: "35",   pointValue: 3, keyVariables: ["coherence_disruption", "topic_consistency"], skillIds: ["R9", "D7"],                    weights: w("TYPE-흐름무관") },
+  { id: "TYPE-순서배열", name: "순서 배열",    numberRange: "36-37", pointValue: 3, keyVariables: ["paragraph_dependency", "discourse_marker_density", "discourse_structure"], skillIds: ["R8", "D7", "D8"], weights: w("TYPE-순서배열") },
+  { id: "TYPE-문장삽입", name: "문장 삽입",    numberRange: "38-39", pointValue: 3, keyVariables: ["coherence_disruption", "connective_density", "given_sentence_role"], skillIds: ["R7", "D8", "D3"], weights: w("TYPE-문장삽입") },
 ];
 
 export const DISTRACTOR_TYPES: DistractorType[] = [
@@ -139,12 +148,44 @@ export interface CyElement {
 const KV_PARENT = "cluster-keyvars";
 const DIST_PARENT = "cluster-distractors";
 
+/** Cluster parent ids for the 5 skill layers (used by p2a-ontology PR-3.5). */
+const SKILL_LAYER_PARENTS = {
+  V: "cluster-skill-V",
+  S: "cluster-skill-S",
+  D: "cluster-skill-D",
+  R: "cluster-skill-R",
+  A: "cluster-skill-A",
+} as const;
+
+const SKILL_LAYER_LABELS = {
+  V: "V · Vocabulary",
+  S: "S · Sentence",
+  D: "D · Discourse",
+  R: "R · Reasoning",
+  A: "A · Academic",
+} as const;
+
+type SkillLayerId = keyof typeof SKILL_LAYER_PARENTS;
+
+export interface BuildOntologyOptions {
+  /** Whether to overlay skill ontology nodes + edges (PR-3.5). Default false. */
+  includeSkills?: boolean;
+  /** When includeSkills, restrict to these layers. Default = all 5 active layers. */
+  skillLayers?: SkillLayerId[];
+}
+
 /**
  * Build the static graph elements. Optionally annotate weakness on QuestionType nodes
  * given a learner's dimensionScores (0 = weakest, 1 = strongest).
+ *
+ * PR-3.5: pass `{ includeSkills: true }` to overlay the P→V→S→D→R→A skill
+ * ontology nodes, 3 edge types (core_dependency / supportive_influence /
+ * indirect_relation), and QT → skill links. Backward-compatible — default
+ * behavior unchanged.
  */
 export function buildOntologyElements(
-  scores?: Partial<Record<VocabDimension, number>>
+  scores?: Partial<Record<VocabDimension, number>>,
+  options: BuildOntologyOptions = {}
 ): CyElement[] {
   const elements: CyElement[] = [];
 
@@ -197,5 +238,89 @@ export function buildOntologyElements(
     });
   }
 
+  // ─── Skill ontology overlay (PR-3.5) ───────────────────────────────
+  if (options.includeSkills) {
+    appendSkillElements(elements, options.skillLayers);
+  }
+
   return elements;
+}
+
+interface SkillSeed {
+  nodes: Array<{
+    id: string;
+    layer: SkillLayerId;
+    name: string;
+    mvpActive: boolean;
+  }>;
+  edges: Array<{ from: string; to: string; type: string }>;
+}
+
+function appendSkillElements(
+  elements: CyElement[],
+  layerFilter?: SkillLayerId[]
+): void {
+  const seed = skillSeed as SkillSeed;
+  const allowedLayers = new Set<SkillLayerId>(
+    layerFilter && layerFilter.length > 0
+      ? layerFilter
+      : (Object.keys(SKILL_LAYER_PARENTS) as SkillLayerId[])
+  );
+
+  // Cluster parents for visible layers only
+  for (const layer of allowedLayers) {
+    elements.push({
+      data: { id: SKILL_LAYER_PARENTS[layer], label: SKILL_LAYER_LABELS[layer] },
+      classes: "cluster cluster-skill",
+    });
+  }
+
+  const visibleSkillIds = new Set<string>();
+  for (const node of seed.nodes) {
+    if (!node.mvpActive) continue;
+    if (!allowedLayers.has(node.layer)) continue;
+    visibleSkillIds.add(node.id);
+    elements.push({
+      data: {
+        id: node.id,
+        label: node.name,
+        parent: SKILL_LAYER_PARENTS[node.layer],
+      },
+      classes: `skill skill-${node.layer}`,
+    });
+  }
+
+  // Edges between visible skills
+  const edgeClassByType: Record<string, string> = {
+    core_dependency: "edge-core",
+    supportive_influence: "edge-support",
+    indirect_relation: "edge-indirect",
+  };
+  for (const e of seed.edges) {
+    if (!visibleSkillIds.has(e.from) || !visibleSkillIds.has(e.to)) continue;
+    const cls = edgeClassByType[e.type] ?? "edge-core";
+    elements.push({
+      data: {
+        id: `skill-${e.from}--${e.to}--${e.type}`,
+        source: e.from,
+        target: e.to,
+      },
+      classes: cls,
+    });
+  }
+
+  // QT → skill links (uses QT.skillIds from PR-3)
+  for (const qt of QUESTION_TYPES) {
+    for (const sid of qt.skillIds) {
+      if (!visibleSkillIds.has(sid)) continue;
+      elements.push({
+        data: {
+          id: `qtskill-${qt.id}--${sid}`,
+          source: qt.id,
+          target: sid,
+        },
+        classes: "edge-qt-skill",
+      });
+    }
+  }
 }

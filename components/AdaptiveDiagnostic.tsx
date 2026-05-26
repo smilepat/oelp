@@ -108,6 +108,7 @@ NEXT_PUBLIC_VOCAB_CAT_TEST_URL=http://localhost:8000
 
   async function start() {
     setState({ kind: "starting" });
+    // eslint-disable-next-line react-hooks/purity
     startedAtRef.current = Date.now();
     itemCountRef.current = 0;
     logEvent({ type: "diag.started", properties: { source: "vocab-cat-test" } });
@@ -125,6 +126,7 @@ NEXT_PUBLIC_VOCAB_CAT_TEST_URL=http://localhost:8000
       });
       if (!res.ok) throw new Error(`/start → ${res.status}`);
       const body = await res.json();
+      // eslint-disable-next-line react-hooks/purity
       itemStartRef.current = Date.now();
       setState({
         kind: "running",
@@ -143,6 +145,7 @@ NEXT_PUBLIC_VOCAB_CAT_TEST_URL=http://localhost:8000
       !!state.item.options &&
       !!state.item.correct_answer &&
       state.item.options[optionIdx] === state.item.correct_answer;
+    // eslint-disable-next-line react-hooks/purity
     const responseTimeMs = Math.max(0, Date.now() - itemStartRef.current);
     itemCountRef.current += 1;
     try {
@@ -173,7 +176,8 @@ NEXT_PUBLIC_VOCAB_CAT_TEST_URL=http://localhost:8000
       if (body.progress.is_complete || !body.next_item) {
         await fetchResults(state.sessionId);
       } else {
-        itemStartRef.current = Date.now();
+        // eslint-disable-next-line react-hooks/purity
+      itemStartRef.current = Date.now();
         setState({
           kind: "running",
           sessionId: state.sessionId,
@@ -239,6 +243,7 @@ NEXT_PUBLIC_VOCAB_CAT_TEST_URL=http://localhost:8000
           weakDim: diagnostic.weakDim,
           strongDim: diagnostic.strongDim,
           totalItems: itemCountRef.current,
+          // eslint-disable-next-line react-hooks/purity
           durationSec: Math.round((Date.now() - startedAtRef.current) / 1000),
         },
       });

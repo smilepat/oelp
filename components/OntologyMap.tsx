@@ -5,12 +5,29 @@ import cytoscape, { type Core, type ElementDefinition } from "cytoscape";
 import { buildOntologyElements } from "@/lib/ontology";
 import type { VocabDimension } from "@/lib/diagnostic";
 
+type SkillLayerId = "V" | "S" | "D" | "R" | "A";
+
 interface Props {
   /** Optional 5D scores (0-100) — colors QuestionType nodes by predicted weakness. */
   scores?: Partial<Record<VocabDimension, number>>;
   height?: number;
   onNodeClick?: (id: string) => void;
+  /** PR-3.5: overlay the P→V→S→D→R→A skill ontology nodes + edges. Default false. */
+  includeSkills?: boolean;
+  /** When includeSkills, restrict to these layers. Default = all 5. */
+  skillLayers?: SkillLayerId[];
+  /** PR-3.6: highlight these node ids with the `causal-path` class. */
+  causalPathIds?: string[];
 }
+
+// PR-3.5 skill layer accent colors (chosen for color-blind friendliness)
+const SKILL_LAYER_COLORS: Record<SkillLayerId, string> = {
+  V: "#fde68a", // amber-200 — vocabulary
+  S: "#bae6fd", // sky-200 — sentence
+  D: "#c7d2fe", // indigo-200 — discourse
+  R: "#fbcfe8", // pink-200 — reasoning
+  A: "#bbf7d0", // green-200 — academic
+};
 
 // weakness buckets — green (strong) → red (weak)
 const WEAKNESS_COLORS = {
@@ -25,13 +42,24 @@ const WEAKNESS_COLORS = {
  * Cytoscape.js wrapper for the OELP microskill graph.
  * Renders 10 QuestionType + 21 keyVariables + 7 DistractorType + cluster parents.
  */
-export function OntologyMap({ scores, height = 560, onNodeClick }: Props) {
+export function OntologyMap({
+  scores,
+  height = 560,
+  onNodeClick,
+  includeSkills = false,
+  skillLayers,
+  causalPathIds,
+}: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const cyRef = useRef<Core | null>(null);
 
   const elements = useMemo<ElementDefinition[]>(
-    () => buildOntologyElements(scores) as unknown as ElementDefinition[],
-    [scores]
+    () =>
+      buildOntologyElements(scores, {
+        includeSkills,
+        skillLayers,
+      }) as unknown as ElementDefinition[],
+    [scores, includeSkills, skillLayers]
   );
 
   useEffect(() => {
@@ -124,6 +152,81 @@ export function OntologyMap({ scores, height = 560, onNodeClick }: Props) {
             "arrow-scale": 0.7,
           },
         },
+        // PR-3.5: skill ontology overlay styles
+        {
+          selector: "node.skill",
+          style: {
+            shape: "round-rectangle",
+            width: 80,
+            height: 32,
+            "border-width": 1,
+            "border-color": "#52525b",
+            "font-size": 10,
+            color: "#18181b",
+          },
+        },
+        { selector: "node.skill-V", style: { "background-color": SKILL_LAYER_COLORS.V } },
+        { selector: "node.skill-S", style: { "background-color": SKILL_LAYER_COLORS.S } },
+        { selector: "node.skill-D", style: { "background-color": SKILL_LAYER_COLORS.D } },
+        { selector: "node.skill-R", style: { "background-color": SKILL_LAYER_COLORS.R } },
+        { selector: "node.skill-A", style: { "background-color": SKILL_LAYER_COLORS.A } },
+        // PR-3.5: 3 edge types from roadmap image legend
+        {
+          selector: "edge.edge-core",
+          style: {
+            width: 2,
+            "line-color": "#52525b",
+            "line-style": "solid",
+            "target-arrow-color": "#52525b",
+          },
+        },
+        {
+          selector: "edge.edge-support",
+          style: {
+            width: 1.5,
+            "line-color": "#a1a1aa",
+            "line-style": "dashed",
+            "target-arrow-color": "#a1a1aa",
+          },
+        },
+        {
+          selector: "edge.edge-indirect",
+          style: {
+            width: 1,
+            "line-color": "#d4d4d8",
+            "line-style": "dotted",
+            "target-arrow-color": "#d4d4d8",
+            "target-arrow-shape": "none",
+          },
+        },
+        {
+          selector: "edge.edge-qt-skill",
+          style: {
+            width: 1,
+            "line-color": "#fbbf24",
+            "line-opacity": 0.55,
+            "target-arrow-color": "#fbbf24",
+            "target-arrow-shape": "vee",
+          },
+        },
+        // PR-3.6: causal-path highlight
+        {
+          selector: "node.causal-path",
+          style: {
+            "border-color": "#7c3aed",
+            "border-width": 3,
+            "background-blacken": -0.05,
+          },
+        },
+        {
+          selector: "edge.causal-path",
+          style: {
+            "line-color": "#7c3aed",
+            "target-arrow-color": "#7c3aed",
+            width: 2.5,
+            "z-index": 999,
+          },
+        },
         {
           selector: "node:selected",
           style: { "border-color": "#3b82f6", "border-width": 3 },
@@ -141,6 +244,19 @@ export function OntologyMap({ scores, height = 560, onNodeClick }: Props) {
       });
     }
 
+    // PR-3.6: apply causal-path class to highlighted nodes + connecting edges
+    if (causalPathIds && causalPathIds.length > 0) {
+      const idSet = new Set(causalPathIds);
+      cyRef.current.nodes().forEach((n) => {
+        if (idSet.has(n.id())) n.addClass("causal-path");
+      });
+      cyRef.current.edges().forEach((e) => {
+        if (idSet.has(e.source().id()) && idSet.has(e.target().id())) {
+          e.addClass("causal-path");
+        }
+      });
+    }
+
     // Expose cy instance in dev mode for debugging/testing
     if (process.env.NODE_ENV !== "production" && typeof window !== "undefined") {
       (window as unknown as { __oelpCy?: Core }).__oelpCy = cyRef.current;
@@ -150,7 +266,7 @@ export function OntologyMap({ scores, height = 560, onNodeClick }: Props) {
       cyRef.current?.destroy();
       cyRef.current = null;
     };
-  }, [elements, onNodeClick]);
+  }, [elements, onNodeClick, causalPathIds]);
 
   return (
     <div
