@@ -1,8 +1,8 @@
 # Handoff — p2a-ontology v1 세션 종료
 
-> **Date**: 2026-05-26 (v1) → 2026-05-26 후속 갱신 (v2)
+> **Date**: 2026-05-26 (v1) → 2026-05-26 후속 갱신 (v2) → 2026-05-26 Plan A 실행 (v3)
 > **세션**: Claude Code Opus 4.7 + smilepat
-> **상태 (v2)**: 🔴 **PR #6 + #7 머지 차단** — `test-and-build` CI 가 lockfile drift(`@emnapi/runtime` & `@emnapi/core` missing from `package-lock.json`)로 실패. 코드 자체는 그대로 valid. **CI fix 가 머지 선결 조건**으로 격상. 자세한 진단/recovery 옵션은 §8 참조.
+> **상태 (v3)**: 🟡 **Plan A 실행 완료, GH Actions backlog 대기 중** — `pr-check.yml` 의 `npm ci` → `npm ci --include=optional` 수정 commit `339832b3` push 완료. 추가 force-trigger empty commit `eff0006`도 push. 그러나 GitHub Actions 가 새 commit (149b9e4, 339832b, eff0006) 에 대해 새 run 을 생성하지 않음 (이전 run 1fa21f40 이 04:57Z 부터 `queued` 상태 정체). `gh workflow run` manual dispatch 도 HTTP 500. **GH Actions infrastructure backlog 또는 free-tier minutes 소진 가능성**. 본인이 다음 세션에서 (1) run 자동 재개 확인 (2) 안 풀리면 GH billing 페이지 확인. 자세한 사항 §9 참조.
 > **목적**: 다음 세션 (본인 단독 / 다른 Claude 세션) 이 이 문서 한 장으로 즉시 재개 가능하게.
 
 ---
@@ -213,6 +213,7 @@ docs/
 
 ## 7. 변경 이력
 
+- **v3** (2026-05-26 동일 세션 연속): Plan A 실행 — `pr-check.yml` 의 `npm ci --include=optional` 수정 + force-trigger empty commit. GH Actions 가 새 commit 에 대해 run 미생성 → §9 추가, §0 상태 배너 갱신.
 - 2026-05-26 v1: 본 핸드오프 작성. PR #6 + #7 open 상태. 자율 가능한 모든 작업 소진.
 - 2026-05-26 v2: 후속 세션에서 CI 실패(lockfile drift) 발견 → §8 신규 + 상단 상태 배너 정정. 머지 선결 조건 명시.
 
@@ -282,4 +283,49 @@ v1 §0 "코드 수정 시점은 끝났고 본인 결단/외부 의존 단계로 
 
 - `data/` 디렉토리에 untracked JSON 9건 (`dogfood-*.json`, `fake-responses.json` 등) — `.gitignore` 등록 또는 정리 결단 필요
 - Node 20 deprecation 경고 (2026-06-02 부터 Node 24 강제) — 별도 PR 권장
+
+---
+
+## 9. Plan A 실행 결과 — GH Actions backlog 정체 (v3)
+
+### 9.1 실행한 변경
+
+| Commit | 내용 |
+|---|---|
+| `339832b3` | `pr-check.yml` Install deps step: `npm ci` → `npm ci --include=optional` (3행 +주석) |
+| `eff0006` | Empty commit "force CI re-run" — GH Actions 가 339832b 에 대해 run 안 만들어서 강제 trigger 시도 |
+
+코드 fix 자체는 정확. Linux runner 가 `--include=optional` 으로 `@emnapi/*` 를 lockfile 무관하게 보강 설치하게 됨.
+
+### 9.2 차단 사유 — GH Actions side
+
+- 새 commit (149b9e4, 339832b, eff0006) 3건 모두 workflow run 미생성. `gh api repos/smilepat/oelp/actions/runs?head_sha=...` 결과 0건.
+- 이전 run (1fa21f40, 04:57Z) 은 `queued` 상태로 정체. 04:57Z 부터 진행 안 됨.
+- `gh workflow run pr-check.yml --ref feature/p2a-ontology` → **HTTP 500 Failed to run workflow dispatch**
+- Repo Actions 권한 확인: `{"allowed_actions":"all","enabled":true}` — 정상
+- Workflow state: `active` — 정상
+
+**가장 가능성 높은 원인**:
+1. **GH Actions free-tier minutes 소진** (smilepat 계정) — 매월 1일 reset
+2. **GH Actions infrastructure backlog** — status.github.com 확인 필요
+
+### 9.3 다음 세션 액션
+
+**Step 1** — `gh run list --limit 3` 으로 queue 풀렸는지 확인. 풀렸다면 `gh pr checks 6 --watch` 로 새 run 결과 대기 → 통과 시 §9.4 로.
+
+**Step 2** — 아직도 정체 시 https://github.com/settings/billing/summary 에서 Actions usage 확인. minutes 소진이면 다음 달 1일까지 대기 또는 plan upgrade.
+
+**Step 3** — backlog 가 정말 풀리지 않으면 Plan B 전환 (WSL/Docker 에서 `rm package-lock.json && npm install` 로 lockfile 재생성). 이 경우 339832b commit 은 revert 또는 유지 (둘 다 호환).
+
+### 9.4 CI 통과 후 머지 순서
+
+1. PR #6 squash merge (main → 자동 production 배포 → `/teacher` 활성)
+2. PR #7 rebase against main (workflow fix 가 main 에 있으므로 자동으로 CI 통과 예정) → squash merge
+3. Dependabot PR #2 (checkout v6), #1 (upload-artifact v7), #3-5 (npm deps) 검토 후 merge
+4. dogfooding 첫 사이클 시작 (`/diagnose` → `/queue` → `promote-weights.mjs`)
+
+### 9.5 부수 정리
+
+- Empty commit `eff0006` 은 머지 시 squash 되어 history 에서 사라짐 — 문제 없음
+- HANDOFF v3 commit 후 본 세션 종료. 본인이 다음 세션에서 §9.3 Step 1 부터 재개.
 
