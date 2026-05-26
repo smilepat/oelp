@@ -30,7 +30,7 @@
     "@axe-core/playwright": "^4.11.3",
     "@playwright/test": "^1.60.0",
     "@tailwindcss/postcss": "^4",
-    "@types/cytoscape": "^3.21.9",
+    "@types/cytoscape": "^3.31.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-cytoscapejs": "^1.2.6",
