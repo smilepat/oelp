@@ -370,3 +370,46 @@ v1 §0 "코드 수정 시점은 끝났고 본인 결단/외부 의존 단계로 
 
 본 §10 commit 후 v4 핸드오프 종료. `MEMORY.md` 에 v2/v3/v4 통합 entry 갱신 예정.
 
+---
+
+## 11. v5 — 후속 5건 일괄 처리 결과 (2026-05-26 동일 세션)
+
+### 11.1 머지 완료 (4 PR)
+
+| # | Commit on main | 내용 |
+|---|---|---|
+| #1 | `5d19722` | actions/upload-artifact 4→7 |
+| #3 | `37557bc` | runtime-frameworks group (2 npm deps) |
+| #4 | `80c8866` | @types/cytoscape 3.21→3.31 |
+| #9 | `fc372c2` | gitignore — dogfooding/simulation artifacts 9건 제외 (89k lines) |
+
+### 11.2 CI 통과, 본인 UI 머지 필요 (token `workflow` scope 부재)
+
+| # | branch | 내용 | 차단 사유 |
+|---|---|---|---|
+| #2 | dependabot/.../checkout-6 | actions/checkout 4→6 | workflow 파일 수정 권한 |
+| #10 | ci/node-24-migration | Node 20→24 (3 workflow) | workflow 파일 수정 권한 |
+
+**대응**: GitHub UI 에서 직접 squash merge 또는 로컬에서 `gh auth refresh -s workflow` 후 재시도.
+
+### 11.3 호환성 이슈로 defer (1 PR)
+
+| # | branch | 내용 | 이슈 |
+|---|---|---|---|
+| #5 | dependabot/.../eslint-10.4.0 | eslint 9→10 | `eslint-plugin-react` 가 ESLint 10 deprecated `context.getFilename()` API 사용 → ESLint step error |
+
+**대응**: PR #5 에 deferral comment 남김. eslint-plugin-react v10-compatible release 대기 또는 eslint 9.x 유지.
+
+### 11.4 종합
+
+- **HANDOFF §10.3 후속 작업 5건 중 3건 완료** (Dependabot 일괄·gitignore·Node 24 PR 생성).
+- 남은 2건: **dogfooding 첫 사이클** (본인 UI 필요), **Plan B 영구 lockfile fix** (WSL/Docker 필요).
+- production https://oelp-phi.vercel.app/ 영향 없음 (workflow + npm patch 갱신 only).
+
+### 11.5 본인 결단/액션 대기
+
+1. PR #2, #10 GitHub UI 머지 (또는 `gh auth refresh -s workflow`)
+2. PR #5 — eslint 10 호환성 정책 결정 (defer 유지 vs eslint-plugin-react 교체 ADR)
+3. dogfooding 첫 사이클 (`/diagnose` → `/queue` → `node scripts/promote-weights.mjs`)
+4. Plan B (WSL/Docker 에서 `npm install --include=optional` → 새 lockfile commit) — 한 번에 cross-platform drift 영구 해결
+
