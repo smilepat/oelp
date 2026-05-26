@@ -10,6 +10,7 @@ import { logEvent } from "@/lib/analytics-events";
 export default function MapPage() {
   const [useDemo, setUseDemo] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [showSkills, setShowSkills] = useState(false);
 
   const scores = useDemo ? DEMO_DIAGNOSTIC.dimensionScores : undefined;
 
@@ -64,19 +65,43 @@ export default function MapPage() {
         >
           {useDemo ? "약점 색상 끄기" : "데모 진단 로드 (약점 색상)"}
         </button>
+        <button
+          type="button"
+          onClick={() => setShowSkills((v) => !v)}
+          className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm text-zinc-900 transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50 dark:hover:bg-zinc-700"
+          aria-pressed={showSkills ? "true" : "false"}
+        >
+          {showSkills ? "역량 그래프 끄기" : "역량 그래프 켜기 (P2A)"}
+        </button>
         {useDemo && (
           <p className="text-xs text-zinc-500">
             weak: {DEMO_DIAGNOSTIC.weakDim.join(", ")} · strong:{" "}
             {DEMO_DIAGNOSTIC.strongDim.join(", ")}
           </p>
         )}
+        {showSkills && (
+          <p className="text-xs text-zinc-500">
+            P→V→S→D→R→A 33 역량 + 38 의존선 표시 · 핵심 의존(실선) / 보조 영향(점선) /
+            간접 연관(점점선)
+          </p>
+        )}
       </section>
 
       <div className="block sm:hidden">
-        <OntologyMap scores={scores} onNodeClick={handleNodeClick} height={360} />
+        <OntologyMap
+          scores={scores}
+          onNodeClick={handleNodeClick}
+          height={360}
+          includeSkills={showSkills}
+        />
       </div>
       <div className="hidden sm:block">
-        <OntologyMap scores={scores} onNodeClick={handleNodeClick} height={560} />
+        <OntologyMap
+          scores={scores}
+          onNodeClick={handleNodeClick}
+          height={560}
+          includeSkills={showSkills}
+        />
       </div>
 
       <section className="grid gap-4 sm:grid-cols-2">

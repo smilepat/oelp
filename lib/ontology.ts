@@ -11,6 +11,9 @@ import type { VocabDimension } from "./diagnostic";
 // Single source of truth for QuestionType weights — promote-weights.mjs only
 // writes to this file, never to the ontology.ts QUESTION_TYPES literal.
 import weightsModule from "./ontology-weights.json";
+// Skill ontology seed (PR-3.5) — referenced only when includeSkills=true,
+// but imported eagerly because client bundles cannot use require().
+import skillSeed from "./skill-ontology-seed.json";
 
 export interface QuestionType {
   id: string;
@@ -145,12 +148,44 @@ export interface CyElement {
 const KV_PARENT = "cluster-keyvars";
 const DIST_PARENT = "cluster-distractors";
 
+/** Cluster parent ids for the 5 skill layers (used by p2a-ontology PR-3.5). */
+const SKILL_LAYER_PARENTS = {
+  V: "cluster-skill-V",
+  S: "cluster-skill-S",
+  D: "cluster-skill-D",
+  R: "cluster-skill-R",
+  A: "cluster-skill-A",
+} as const;
+
+const SKILL_LAYER_LABELS = {
+  V: "V · Vocabulary",
+  S: "S · Sentence",
+  D: "D · Discourse",
+  R: "R · Reasoning",
+  A: "A · Academic",
+} as const;
+
+type SkillLayerId = keyof typeof SKILL_LAYER_PARENTS;
+
+export interface BuildOntologyOptions {
+  /** Whether to overlay skill ontology nodes + edges (PR-3.5). Default false. */
+  includeSkills?: boolean;
+  /** When includeSkills, restrict to these layers. Default = all 5 active layers. */
+  skillLayers?: SkillLayerId[];
+}
+
 /**
  * Build the static graph elements. Optionally annotate weakness on QuestionType nodes
  * given a learner's dimensionScores (0 = weakest, 1 = strongest).
+ *
+ * PR-3.5: pass `{ includeSkills: true }` to overlay the P→V→S→D→R→A skill
+ * ontology nodes, 3 edge types (core_dependency / supportive_influence /
+ * indirect_relation), and QT → skill links. Backward-compatible — default
+ * behavior unchanged.
  */
 export function buildOntologyElements(
-  scores?: Partial<Record<VocabDimension, number>>
+  scores?: Partial<Record<VocabDimension, number>>,
+  options: BuildOntologyOptions = {}
 ): CyElement[] {
   const elements: CyElement[] = [];
 
@@ -203,5 +238,89 @@ export function buildOntologyElements(
     });
   }
 
+  // ─── Skill ontology overlay (PR-3.5) ───────────────────────────────
+  if (options.includeSkills) {
+    appendSkillElements(elements, options.skillLayers);
+  }
+
   return elements;
+}
+
+interface SkillSeed {
+  nodes: Array<{
+    id: string;
+    layer: SkillLayerId;
+    name: string;
+    mvpActive: boolean;
+  }>;
+  edges: Array<{ from: string; to: string; type: string }>;
+}
+
+function appendSkillElements(
+  elements: CyElement[],
+  layerFilter?: SkillLayerId[]
+): void {
+  const seed = skillSeed as SkillSeed;
+  const allowedLayers = new Set<SkillLayerId>(
+    layerFilter && layerFilter.length > 0
+      ? layerFilter
+      : (Object.keys(SKILL_LAYER_PARENTS) as SkillLayerId[])
+  );
+
+  // Cluster parents for visible layers only
+  for (const layer of allowedLayers) {
+    elements.push({
+      data: { id: SKILL_LAYER_PARENTS[layer], label: SKILL_LAYER_LABELS[layer] },
+      classes: "cluster cluster-skill",
+    });
+  }
+
+  const visibleSkillIds = new Set<string>();
+  for (const node of seed.nodes) {
+    if (!node.mvpActive) continue;
+    if (!allowedLayers.has(node.layer)) continue;
+    visibleSkillIds.add(node.id);
+    elements.push({
+      data: {
+        id: node.id,
+        label: node.name,
+        parent: SKILL_LAYER_PARENTS[node.layer],
+      },
+      classes: `skill skill-${node.layer}`,
+    });
+  }
+
+  // Edges between visible skills
+  const edgeClassByType: Record<string, string> = {
+    core_dependency: "edge-core",
+    supportive_influence: "edge-support",
+    indirect_relation: "edge-indirect",
+  };
+  for (const e of seed.edges) {
+    if (!visibleSkillIds.has(e.from) || !visibleSkillIds.has(e.to)) continue;
+    const cls = edgeClassByType[e.type] ?? "edge-core";
+    elements.push({
+      data: {
+        id: `skill-${e.from}--${e.to}--${e.type}`,
+        source: e.from,
+        target: e.to,
+      },
+      classes: cls,
+    });
+  }
+
+  // QT → skill links (uses QT.skillIds from PR-3)
+  for (const qt of QUESTION_TYPES) {
+    for (const sid of qt.skillIds) {
+      if (!visibleSkillIds.has(sid)) continue;
+      elements.push({
+        data: {
+          id: `qtskill-${qt.id}--${sid}`,
+          source: qt.id,
+          target: sid,
+        },
+        classes: "edge-qt-skill",
+      });
+    }
+  }
 }
